@@ -390,6 +390,7 @@ public class TileEntityMoverBase extends TileEntityBase {
 	}
 
 	private void removeEmptyLockedBlocks() {
+		if(false) {
 		final LinkedList<Vector3i> toRemove = new LinkedList<Vector3i>();
 		for (final Vector3i location : getConnectedBlocks().blocks) {
 			if (!WorldUtils.isNonEmptyBlock(this.worldObj, location)) {
@@ -401,6 +402,7 @@ public class TileEntityMoverBase extends TileEntityBase {
 		}
 		if (!toRemove.isEmpty()) {
 			updateBlock();
+		}
 		}
 	}
 
