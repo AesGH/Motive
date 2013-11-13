@@ -80,10 +80,13 @@ public class RenderHook {
 			blockId = par1World.getBlockId(par2, par3, par4);
 			if (blockId != 0) {
 				final Block block = Block.blocksList[blockId];
-
-				final MovingObjectPosition result = block.collisionRayTrace(par1World, par2, par3, par4, par5Vec3, par6Vec3);
-				if (result != null)
-					return result;
+				if (block != null) {
+					if (block.canCollideCheck(par1World.getBlockMetadata(par2, par3, par4), par3a)) {
+						final MovingObjectPosition result = block.collisionRayTrace(par1World, par2, par3, par4, par5Vec3, par6Vec3);
+						if (result != null)
+							return result;
+					}
+				}
 			}
 		}
 		return null;
