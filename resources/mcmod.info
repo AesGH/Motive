@@ -1,12 +1,12 @@
 [
 {
-  "modinfoversion": 3,
+  "modinfoversion": 4,
   "modid": "motive",
   "name": "Motive",
-  "description":"Motive. Built against Forge @FORGE_VERSION@.",
+  "description":"Motive. Alpha release.",
   "version": "@VERSION@.@BUILD_NUMBER@",
   "mcversion": "@MC_VERSION@",
-  "url": "http://bit.ly",
+  "url": "https://github.com/AesGH/Motive",
   "updateUrl": "",
   "authors": [ "Aes"],
   "credits": "",

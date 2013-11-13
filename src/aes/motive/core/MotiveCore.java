@@ -42,7 +42,7 @@ public class MotiveCore extends DummyModContainer implements IFMLLoadingPlugin, 
 		metadata.version = "@VERSION@.@BUILD_NUMBER@";
 		metadata.name = "Motive Core";
 		metadata.description = "Motive Core";
-		metadata.url = "http://www.google.com?q=minecraft%20motive";
+		metadata.url = "https://github.com/AesGH/Motive";
 		metadata.authorList.add("Aes");
 	}
 
