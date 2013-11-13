@@ -1,6 +1,6 @@
-*.class
 
-# Package Files #
-*.jar
-*.war
-*.ear
+.DS_Store
+
+*.blend1
+
+*.blend2

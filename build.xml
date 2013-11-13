@@ -1,0 +1,214 @@
+<project name="Motive" basedir="../" default="rebuild">
+	<property environment="env" />
+	
+	<property name="mod.version" value="0.1.2" />
+	
+	<property name="mc.version" value="1.6.4" />
+	<property name="forge.version" value="9.11.1.916" />
+	<property name="ccobf.version" value="1.0.0.15" />
+	
+	<property name="src.dir" value="${ant.project.name}" />
+	<property name="build.dir" value="build_${mc.version}" />
+	<property name="download.dir" value="download" />
+	
+	
+	<property name="output.dir" value="dist" />
+	<property name="forge.dir" value="${build.dir}/forge" />
+	<property name="mcp.dir" value="${forge.dir}/mcp" />
+
+	<property name="forge.name" value="minecraftforge-src-${mc.version}-${forge.version}.zip" />
+	<property name="forgeuni.name" value="minecraftforge-universal-${mc.version}-${forge.version}.jar" />
+	<property name="ccobf.name" value="CCObfuscator-all-${ccobf.version}.jar" />
+
+	<property name="distro.forge" value="http://files.minecraftforge.net/" />
+
+	<!-- Check downloaded dependencies -->
+	<available property="forge-downloaded" file="${download.dir}/${forge.name}" />
+	<available property="forgeuni-downloaded" file="${download.dir}/${forgeuni.name}" />
+	<available property="ccobf-downloaded" file="${download.dir}/${ccobf.name}" />
+
+
+	<!-- Check installed dependencies -->
+	<property name="build.dependencies.file" value="${build.dir}/dependencies.properties" />
+	<property prefix="build.dependencies" file="${build.dependencies.file}" />
+	<condition property="forge-installed">
+		<equals arg1="${build.dependencies.forge}" arg2="${forge.version}" />
+	</condition>
+
+	<condition property="ccobf-installed">
+		<and>
+			<isset property="forge-installed" />
+			<equals arg1="${build.dependencies.ccobf}" arg2="${ccobf.version}" />
+		</and>
+	</condition>
+
+	<condition property="runnung-in-ci">
+		<isset property="env.TRAVIS" />
+	</condition>
+
+
+	<!-- Make directories -->
+	<mkdir dir="${build.dir}" />
+	<mkdir dir="${download.dir}" />
+	<mkdir dir="${output.dir}" />
+
+
+	<!-- Targets for downloading dependencies -->
+	<target name="download-forge" unless="forge-downloaded">
+		<get src="${distro.forge}${forge.name}" dest="${download.dir}" usetimestamp="true" />
+	</target>
+
+	<target name="download-forgeuni" unless="forgeuni-downloaded">
+		<get src="${distro.forge}${forgeuni.name}" dest="${download.dir}" usetimestamp="true" />
+	</target>
+
+	<target name="download-ccobf" unless="ccobf-downloaded">
+		<get src="${distro.forge}CCObfuscator/${ccobf.name}" dest="${download.dir}" usetimestamp="true" />
+	</target>
+
+	<!-- Targets for installing dependencies -->
+	<target name="install-forge" depends="download-forge" unless="forge-installed">
+		<echo message="Deleting old Forge" />
+		<delete dir="${forge.dir}" />
+
+		<condition property="installargs" value=" --no-assets" else="">
+			<or>
+				<isset property="env.TRAVIS" />
+				<isset property="env.BUILD_ID" />
+			</or>
+		</condition>
+
+		<echo message="Installing Forge with args '${installargs}'." />
+		<unzip src="${download.dir}/${forge.name}" dest="${forge.dir}/.." />
+		<property name="fml.python.exe" location="${forge.dir}/fml/python/python_fml.exe" />
+		<exec dir="${forge.dir}" executable="${fml.python.exe}" osfamily="windows" failonerror="true">
+			<arg line="install.py${installargs}" />
+		</exec>
+		<exec dir="${forge.dir}" executable="python" osfamily="unix" failonerror="true">
+			<arg line="install.py${installargs}" />
+		</exec>
+
+		<echo message="Updating build.dependencies" />
+		<delete file="${build.dependencies.file}" />
+		<propertyfile file="${build.dependencies.file}">
+			<entry key="forge" value="${forge.version}" />
+		</propertyfile>
+	</target>
+
+	<target name="install-ccobf" depends="install-forge,download-ccobf" unless="ccobf-installed">
+		<echo message="Deleting old CCObfuscator" />
+		<delete file="${mcp.dir}/${build.dependencies.ccobf.name}" />
+
+		<echo message="Installing CCObfuscator" />
+		<copy file="${download.dir}/${ccobf.name}" todir="${mcp.dir}" />
+
+		<echo message="Updating build.dependencies" />
+		<propertyfile file="${build.dependencies.file}">
+			<entry key="ccobf" value="${ccobf.version}" />
+			<entry key="ccobf.name" value="${ccobf.name}" />
+		</propertyfile>
+	</target>
+
+
+
+	<target name="install-dependencies" depends="install-forge,install-ccobf" />
+
+	<!-- Targets for building -->
+	<target name="recompile">
+		
+		<delete dir="${mcp.dir}/src/minecraft/aes" />
+		<delete dir="${mcp.dir}/src/minecraft/dan200" />
+		
+		<!-- Copy source -->
+		<echo message="Copying source" />
+		<copy todir="${mcp.dir}/src/minecraft">
+			<fileset dir="${src.dir}/src" />
+			<fileset dir="${src.dir}/dependencies" />
+		</copy>
+
+		<!-- Replace Tokens-->
+		<replace dir="${mcp.dir}/src/minecraft/aes" token="@VERSION@" value="${mod.version}" />
+		<replace dir="${mcp.dir}/src/minecraft/aes" token="@BUILD_NUMBER@" value="${build.number}" />
+		<replace dir="${mcp.dir}/src/minecraft/aes" token="@MC_VERSION@" value="${mc.version}" />
+
+		<echo message="Recompiling" />
+		<property name="mcp.python.exe" location="${mcp.dir}/runtime/bin/python/python_mcp.exe" />
+		<exec dir="${mcp.dir}" executable="${mcp.python.exe}" osfamily="windows" resultproperty="recompile.code">
+			<arg line="runtime/recompile.py" />
+		</exec>
+		<exec dir="${mcp.dir}" executable="python" osfamily="unix" resultproperty="recompile.code">
+			<arg line="runtime/recompile.py" />
+		</exec>
+
+		<echo message="Removing source" />
+		<delete includeemptydirs="true">
+			<fileset dir="${mcp.dir}/src/minecraft">
+				<present present="both" targetdir="${src.dir}/src" />
+				<present present="both" targetdir="${src.dir}/dependencies" />
+			</fileset>
+		</delete>
+
+		<fail message="Failed to recompile">
+			<condition>
+				<isfailure code="${recompile.code}" />
+			</condition>
+		</fail>
+	</target>
+
+	<target name="reobfuscate">
+		<echo message="Reobfuscating" />
+
+
+
+
+
+		<exec dir="${mcp.dir}" executable="cmd" osfamily="windows">
+                        <arg line="/c reobfuscate_srg.bat" />
+                </exec>
+                <exec dir="${mcp.dir}" executable="bash" osfamily="unix">
+                        <arg line="reobfuscate_srg.sh" />
+                </exec>
+
+
+
+
+
+		<echo message="Copying Resources" />
+		<delete dir="${mcp.dir}/reobf/resources" />
+		<copy todir="${mcp.dir}/reobf/resources">
+			<fileset dir="${src.dir}/resources" />
+		</copy>
+
+		<!-- Replace Tokens-->
+		<replace dir="${mcp.dir}/reobf/resources" token="@NAME@" value="${ant.project.name}" />
+		<replace dir="${mcp.dir}/reobf/resources" token="@VERSION@" value="${mod.version}" />
+		<replace dir="${mcp.dir}/reobf/resources" token="@BUILD_NUMBER@" value="${build.number}" />
+		<replace dir="${mcp.dir}/reobf/resources" token="@MC_VERSION@" value="${mc.version}" />
+		<replace dir="${mcp.dir}/reobf/resources" token="@FORGE_VERSION@" value="${forge.version}" />
+	</target>
+
+	<target name="package">
+		<echo message="Building Jar" />
+		<mkdir dir="${output.dir}" />
+
+		<echo message="Packaging" />
+		<jar destfile="${output.dir}/${mod.name.base}" manifest="${mcp.dir}/reobf/resources/MANIFEST.MF">
+			<fileset dir="${mcp.dir}/reobf/minecraft" includes="**/aes*.class, **/aes/**, codechicken/core/launch/DepLoader**, dan200/**" />
+			<fileset dir="${mcp.dir}/reobf/resources" excludes="MANIFEST.MF" />
+		</jar>
+		<copy file="${output.dir}/${mod.name.base}" todir="C:\Users\Jeremy\AppData\Roaming\.minecraft\mods" />
+
+
+	</target>
+
+	<target name="rebuild">
+		<buildnumber file="${ant.project.name}/build.number" />	
+		<property name="mod.name.base" value="${ant.project.name}-${mc.version}-${mod.version}.${build.number}.jar" />
+			
+		<antcall target="install-dependencies" />
+		<antcall target="recompile" />
+		<antcall target="reobfuscate" />
+		<antcall target="package" />
+	</target>
+
+</project>
