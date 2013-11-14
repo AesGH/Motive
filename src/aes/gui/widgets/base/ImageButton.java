@@ -23,7 +23,7 @@ public abstract class ImageButton extends Button {
 	}
 
 	@Override
-	public void handleClick(int mx, int my) {
-		super.handleClick(mx, my);
+	public void handleClick(int mx, int my, int button) {
+		super.handleClick(mx, my, button);
 	}
 }

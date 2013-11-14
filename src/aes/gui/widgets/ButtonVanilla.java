@@ -60,9 +60,9 @@ public class ButtonVanilla extends Button {
 	}
 
 	@Override
-	public void handleClick(int mx, int my) {
+	public void handleClick(int mx, int my, int button) {
 		this.mc.sndManager.playSoundFX("random.click", 1.0F, 1.0F);
-		super.handleClick(mx, my);
+		super.handleClick(mx, my, button);
 	}
 
 	@Override

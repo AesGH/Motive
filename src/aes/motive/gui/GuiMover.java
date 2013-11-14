@@ -51,7 +51,7 @@ public class GuiMover extends BasicScreen {
 
 		this.buttonActive = new ButtonVanilla(this.xSize - 2 * this.margin, 20, "Activated", new ButtonHandler() {
 			@Override
-			public void buttonClicked(Widget button) {
+			public void buttonClicked(Widget widget, int button) {
 				GuiMover.this.tileEntity.clientChangedProperty("active", GuiMover.this.tileEntity.getActive() ? "false" : "true");
 			}
 		});
@@ -60,7 +60,7 @@ public class GuiMover extends BasicScreen {
 
 		this.buttonMoving = new ButtonVanilla(this.xSize - 2 * this.margin, 20, "Connected", new ButtonHandler() {
 			@Override
-			public void buttonClicked(Widget button) {
+			public void buttonClicked(Widget widget, int button) {
 				GuiMover.this.tileEntity.clientChangedProperty("locked", GuiMover.this.tileEntity.getLocked() ? "false" : "true");
 			}
 		});
@@ -86,9 +86,9 @@ public class GuiMover extends BasicScreen {
 
 		this.buttonMode = new ButtonVanilla(this.xSize - 2 * this.margin, 20, "Mode", new ButtonHandler() {
 			@Override
-			public void buttonClicked(Widget button) {
+			public void buttonClicked(Widget widget, int button) {
 				GuiMover.this.tileEntity.clientChangedProperty("mode",
-						((Object) ((GuiMover.this.tileEntity.mode.ordinal() + 1) % MoverMode.values().length)).toString());
+						((Object) ((GuiMover.this.tileEntity.mode.ordinal() + (button == 0 ? 1 : -1) + MoverMode.values().length) % MoverMode.values().length)).toString());
 			}
 		});
 

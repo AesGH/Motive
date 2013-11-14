@@ -28,6 +28,8 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 public class TileEntityMoverBase extends TileEntityBase {
+	private static final boolean REMOVE_EMPTY_CONNECTED_BLOCKS = false;
+
 	private static Map<String, TileEntityMoverBase> moversServer = new HashMap<String, TileEntityMoverBase>();
 
 	private static Map<String, TileEntityMoverBase> moversClient = new HashMap<String, TileEntityMoverBase>();
@@ -390,7 +392,7 @@ public class TileEntityMoverBase extends TileEntityBase {
 	}
 
 	private void removeEmptyLockedBlocks() {
-		if(false) {
+		if(!REMOVE_EMPTY_CONNECTED_BLOCKS) return;
 		final LinkedList<Vector3i> toRemove = new LinkedList<Vector3i>();
 		for (final Vector3i location : getConnectedBlocks().blocks) {
 			if (!WorldUtils.isNonEmptyBlock(this.worldObj, location)) {
@@ -402,7 +404,6 @@ public class TileEntityMoverBase extends TileEntityBase {
 		}
 		if (!toRemove.isEmpty()) {
 			updateBlock();
-		}
 		}
 	}
 

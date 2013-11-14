@@ -216,7 +216,7 @@ public class Container {
 		return this.left;
 	}
 
-	public boolean mouseClicked(int mx, int my) {
+	public boolean mouseClicked(int mx, int my, int button) {
 		if (inBounds(mx, my)) {
 			boolean resetFocus = true;
 
@@ -230,7 +230,7 @@ public class Container {
 						setFocused((FocusableWidget) w);
 						resetFocus = false;
 					}
-					w.handleClick(mx, my);
+					w.handleClick(mx, my, button);
 					break;
 				}
 			}
@@ -242,9 +242,9 @@ public class Container {
 		return false;
 	}
 
-	public void mouseReleased(int mx, int my) {
+	public void mouseReleased(int mx, int my, int button) {
 		if (this.lastSelected != null) {
-			this.lastSelected.mouseReleased(mx, my);
+			this.lastSelected.mouseReleased(mx, my, button);
 			this.lastSelected = null;
 		}
 	}

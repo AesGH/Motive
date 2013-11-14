@@ -104,8 +104,9 @@ public abstract class Widget extends Gui {
 	 *            Mouse-X
 	 * @param my
 	 *            Mouse-Y
+	 * @param button 
 	 */
-	public void handleClick(int mx, int my) {
+	public void handleClick(int mx, int my, int button) {
 	}
 
 	/**
@@ -141,8 +142,9 @@ public abstract class Widget extends Gui {
 	 *            Mouse-X
 	 * @param my
 	 *            Mouse-Y
+	 * @param button 
 	 */
-	public void mouseReleased(int mx, int my) {
+	public void mouseReleased(int mx, int my, int button) {
 	}
 
 	/**

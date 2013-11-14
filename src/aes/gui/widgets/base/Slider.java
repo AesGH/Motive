@@ -47,17 +47,23 @@ public abstract class Slider extends Widget {
 	}
 
 	@Override
-	public void handleClick(int mx, int my) {
-		this.value = (float) (mx - (this.x + 4)) / (float) (this.width - 8);
-		this.value = MathHelper.clamp_float(this.value, 0, 1);
-		this.valueChangedHandler.valueChanged(this);
-		this.dragging = true;
+	public void handleClick(int mx, int my, int button) {
+		if(button == 0)
+		{
+			this.value = (float) (mx - (this.x + 4)) / (float) (this.width - 8);
+			this.value = MathHelper.clamp_float(this.value, 0, 1);
+			this.valueChangedHandler.valueChanged(this);
+			this.dragging = true;
+		}
 	}
 
 	@Override
-	public void mouseReleased(int mx, int my) {
-		this.dragging = false;
-		this.valueChangedHandler.valueChanged(this);
+	public void mouseReleased(int mx, int my, int button) {
+		if(button == 0)
+		{
+			this.dragging = false;
+			this.valueChangedHandler.valueChanged(this);
+		}
 	}
 
 }

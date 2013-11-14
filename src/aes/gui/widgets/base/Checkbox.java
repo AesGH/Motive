@@ -32,10 +32,10 @@ public abstract class Checkbox extends Widget {
 	}
 
 	@Override
-	public void handleClick(int mx, int my) {
+	public void handleClick(int mx, int my, int button) {
 		this.check = !this.check;
 		if (this.handler != null) {
-			this.handler.buttonClicked(this);
+			this.handler.buttonClicked(this, button);
 		}
 	}
 

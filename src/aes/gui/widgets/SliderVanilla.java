@@ -38,8 +38,8 @@ public class SliderVanilla extends Slider {
 	}
 
 	@Override
-	public void handleClick(int mx, int my) {
-		super.handleClick(mx, my);
+	public void handleClick(int mx, int my, int button) {
+		super.handleClick(mx, my, button);
 		this.mc.sndManager.playSoundFX("random.click", 1.0F, 1.0F);
 	}
 

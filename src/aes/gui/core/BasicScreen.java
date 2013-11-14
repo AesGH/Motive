@@ -24,7 +24,7 @@ public abstract class BasicScreen extends GuiScreen {
 
 	public class CloseHandler implements ButtonHandler {
 		@Override
-		public void buttonClicked(Widget button) {
+		public void buttonClicked(Widget widget, int button) {
 			close();
 		}
 	}
@@ -132,27 +132,23 @@ public abstract class BasicScreen extends GuiScreen {
 	}
 
 	@Override
-	protected void mouseClicked(int mx, int my, int code) {
-		if (code == 0) {
-			for (final Container c : this.containers) {
-				if (c.mouseClicked(mx, my)) {
-					this.selectedContainer = c;
-					break;
-				}
+	protected void mouseClicked(int mx, int my, int button) {
+		for (final Container c : this.containers) {
+			if (c.mouseClicked(mx, my, button)) {
+				this.selectedContainer = c;
+				break;
 			}
-			for (final Container c : this.containers)
-				if (c != this.selectedContainer) {
-					c.setFocused(null);
-				}
 		}
+		for (final Container c : this.containers)
+			if (c != this.selectedContainer) {
+				c.setFocused(null);
+			}
 	}
 
 	@Override
-	protected void mouseMovedOrUp(int mx, int my, int code) {
-		if (code == 0) {
-			for (final Container c : this.containers) {
-				c.mouseReleased(mx, my);
-			}
+	protected void mouseMovedOrUp(int mx, int my, int button) {
+		for (final Container c : this.containers) {
+			c.mouseReleased(mx, my, button);
 		}
 	}
 

@@ -9,7 +9,7 @@ package aes.gui.widgets.base;
 public abstract class Button extends Widget {
 
 	public interface ButtonHandler {
-		void buttonClicked(Widget button);
+		void buttonClicked(Widget widget, int button);
 	}
 
 	protected ButtonHandler handler;
@@ -30,9 +30,9 @@ public abstract class Button extends Widget {
 	}
 
 	@Override
-	public void handleClick(int mx, int my) {
+	public void handleClick(int mx, int my, int button) {
 		if (this.handler != null) {
-			this.handler.buttonClicked(this);
+			this.handler.buttonClicked(this, button);
 		}
 	}
 

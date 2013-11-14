@@ -171,7 +171,7 @@ public abstract class TextField extends FocusableWidget {
 	}
 
 	@Override
-	public void handleClick(int mx, int my) {
+	public void handleClick(int mx, int my, int button) {
 		int pos = mx - this.x;
 		pos -= Math.abs(getInternalWidth() - this.width) / 2;
 
