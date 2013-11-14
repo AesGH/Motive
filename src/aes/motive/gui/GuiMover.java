@@ -88,7 +88,7 @@ public class GuiMover extends BasicScreen {
 			@Override
 			public void buttonClicked(Widget widget, int button) {
 				GuiMover.this.tileEntity.clientChangedProperty("mode",
-						((Object) ((GuiMover.this.tileEntity.mode.ordinal() + (button == 0 ? 1 : -1) + MoverMode.values().length) % MoverMode.values().length)).toString());
+						((Object) ((GuiMover.this.tileEntity.mode.ordinal() + (button == 0 ? -1 : 1) + MoverMode.values().length) % MoverMode.values().length)).toString());
 			}
 		});
 
