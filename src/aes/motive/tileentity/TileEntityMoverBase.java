@@ -263,14 +263,22 @@ public class TileEntityMoverBase extends TileEntityBase {
 				return false;
 			final int blockId = this.worldObj.getBlockId(to.x, to.y, to.z);
 			if (blockId != 0 && !getConnectedBlocks().blocks.contains(to)) {
-				if (!(Block.blocksList[blockId] instanceof BlockFluid || Block.blocksList[blockId] instanceof BlockFluidBase)) {
-					setStatus("Obstructed", Block.blocksList[blockId].getLocalizedName() + " at " + to);
-					/*
-					 * Motive.log("obstruction at " + to + " of type " + blockId
-					 * + " (" + Block.blocksList[blockId].getUnlocalizedName() +
-					 * ")");
-					 */return true;
-				}
+				
+				Block block = Block.blocksList[blockId];
+				if (block instanceof BlockFluid)
+					continue;
+				if(block instanceof BlockFluidBase)
+					continue;
+
+				if(block.isBlockReplaceable(worldObj, to.x, to.y, to.z))
+					continue;
+				
+				setStatus("Obstructed", block.getLocalizedName() + " at " + to);
+				/*
+				 * Motive.log("obstruction at " + to + " of type " + blockId
+				 * + " (" + Block.blocksList[blockId].getUnlocalizedName() +
+				 * ")");
+				 */return true;
 			}
 		}
 		return false;

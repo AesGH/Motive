@@ -70,11 +70,14 @@ public class ConnectedBlocks {
 		 * final int blockId = world.getBlockId(coord.x, coord.y, coord.z); if
 		 * (blockId == Motive.BlockMover.blockID && checked.size() > 1) throw
 		 * new CannotMoveAnotherMoverException();
-		 */this.blocks.add(coord);
+		 */
+		
+		this.blocks.add(coord);
+		if (this.blocks.size() > MAX_BLOCKS_CAN_MOVE)
+			throw new TooManyBlocksException();
+		
 		for (final ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
 			addConnectedBlocks(world, checked, coord.increment(direction));
-			if (this.blocks.size() > MAX_BLOCKS_CAN_MOVE)
-				throw new TooManyBlocksException();
 		}
 	}
 

@@ -57,6 +57,13 @@ public class WorldUtils {
 		final int bid = worldObj.getBlockId(location.x, location.y, location.z);
 		if (bid == Block.bedrock.blockID)
 			return false;
+		
+		Block block = Block.blocksList[bid];
+		if(block == null || block.blockID != bid)
+			return false;
+		
+		if(block.isBlockReplaceable(worldObj, location.x, location.y, location.z))
+			return false;
 
 		return true;
 	}
