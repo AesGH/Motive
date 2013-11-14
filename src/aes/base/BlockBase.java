@@ -73,7 +73,7 @@ public class BlockBase extends BlockContainer {
 
 	@Override
 	public boolean isBlockNormalCube(World world, int x, int y, int z) {
-		return true;
+		return false;
 	};
 
 	@Override
