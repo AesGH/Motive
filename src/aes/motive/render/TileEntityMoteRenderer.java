@@ -1,10 +1,10 @@
 package aes.motive.render;
 
-import net.minecraft.client.model.ModelBase;
-
 import org.lwjgl.opengl.GL11;
 
 import aes.base.TileEntitySpecialRendererBase;
+import aes.motive.render.model.ModelBase;
+import aes.motive.render.model.ModelMote;
 import aes.motive.tileentity.TileEntityMoverBase;
 
 public class TileEntityMoteRenderer extends TileEntitySpecialRendererBase {

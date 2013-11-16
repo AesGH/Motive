@@ -36,7 +36,8 @@ public class GuiMover extends BasicScreen {
 	private Label textStatus;
 	private final String uid;
 	private final World world;
-	private Label textStatusDetail;;
+	private Label textStatusDetail;
+	private ButtonVanilla buttonHighlight;;
 
 	public GuiMover(TileEntityMover tileEntity) {
 		super(null);
@@ -65,6 +66,13 @@ public class GuiMover extends BasicScreen {
 			}
 		});
 
+		this.buttonHighlight = new ButtonVanilla(this.xSize - 2 * this.margin, 20, "Highlight", new ButtonHandler() {
+			@Override
+			public void buttonClicked(Widget widget, int button) {
+				GuiMover.this.tileEntity.clientChangedProperty("highlight", GuiMover.this.tileEntity.getHighlight() ? "false" : "true");
+			}
+		});
+
 		this.sliderSpeed = new SliderVanilla(this.xSize - 2 * this.margin, 20, speedValue, new Slider.SliderFormat() {
 			@Override
 			public String format(Slider slider) {
@@ -87,15 +95,16 @@ public class GuiMover extends BasicScreen {
 		this.buttonMode = new ButtonVanilla(this.xSize - 2 * this.margin, 20, "Mode", new ButtonHandler() {
 			@Override
 			public void buttonClicked(Widget widget, int button) {
-				GuiMover.this.tileEntity.clientChangedProperty("mode",
-						((Object) ((GuiMover.this.tileEntity.mode.ordinal() + (button == 0 ? -1 : 1) + MoverMode.values().length) % MoverMode.values().length)).toString());
+				GuiMover.this.tileEntity.clientChangedProperty("mode", ((Object) ((GuiMover.this.tileEntity.mode.ordinal() + (button == 0 ? -1 : 1) + MoverMode
+						.values().length) % MoverMode.values().length)).toString());
 			}
 		});
 
 		this.textStatus = new Label("Status: " + this.tileEntity.getStatus());
 		this.textStatusDetail = new Label("Status: " + this.tileEntity.getStatusDetail());
 
-		this.container.addWidgets(this.buttonActive, this.buttonMoving, this.sliderSpeed, this.buttonMode, this.textStatus, this.textStatusDetail);
+		this.container.addWidgets(this.buttonActive, this.buttonMoving, this.buttonHighlight, this.sliderSpeed, this.buttonMode, this.textStatus,
+				this.textStatusDetail);
 
 		this.containers.add(this.container);
 		this.selectedContainer = this.container;
@@ -151,6 +160,8 @@ public class GuiMover extends BasicScreen {
 		yLocation += this.buttonActive.getHeight() + this.gap;
 		this.buttonMoving.setPosition(leftMargin, yLocation);
 		yLocation += this.buttonMoving.getHeight() + this.gap;
+		this.buttonHighlight.setPosition(leftMargin, yLocation);
+		yLocation += this.buttonHighlight.getHeight() + this.gap;
 		this.sliderSpeed.setPosition(this.buttonActive.getX(), yLocation);
 		yLocation += this.sliderSpeed.getHeight() + this.gap;
 
@@ -172,6 +183,7 @@ public class GuiMover extends BasicScreen {
 		this.buttonActive.setText(this.tileEntity.getActive() ? "Activated: \247aON" : "Activated: \247cOFF");
 		this.buttonMoving
 				.setText(this.tileEntity.getLocked() ? "Moving: " + (this.tileEntity.getLockedCount() - 1) + " connected blocks" : "Moving: Just self");
+		this.buttonHighlight.setText(this.tileEntity.getHighlight() ? "Highlight blocks: \247aON" : "Highlight blocks: \247cOFF");
 		switch (this.tileEntity.mode) {
 		case TowardsSignal:
 			this.buttonMode.setText("Mode: Towards signals");

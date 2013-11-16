@@ -1,4 +1,4 @@
-package aes.motive.render;
+package aes.motive.render.model;
 
 import net.minecraft.client.model.ModelRenderer;
 import aes.motive.Motive;
@@ -55,8 +55,9 @@ public abstract class ModelMotiveBase extends ModelBase {
 		this.outline.render(f5);
 	}
 
-	protected void renderMote(float f5) {
-		FMLClientHandler.instance().getClient().renderEngine.bindTexture(Motive.resourceMoteTexture);
+	protected void renderMote(float f5, boolean pairedWithCurrentRemote) {
+		FMLClientHandler.instance().getClient().renderEngine.bindTexture(pairedWithCurrentRemote ? Motive.resourcePairedMoteTexture
+				: Motive.resourceMoteTexture);
 		this.center.render(f5);
 	}
 

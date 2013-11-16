@@ -1,7 +1,8 @@
 package aes.motive.render;
 
-import net.minecraft.client.model.ModelBase;
 import aes.base.TileEntitySpecialRendererBase;
+import aes.motive.render.model.ModelBase;
+import aes.motive.render.model.ModelMover;
 
 public class TileEntityMoverRenderer extends TileEntitySpecialRendererBase {
 	@Override

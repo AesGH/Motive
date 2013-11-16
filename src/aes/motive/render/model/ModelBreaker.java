@@ -1,7 +1,8 @@
-package aes.motive.render;
+package aes.motive.render.model;
 
 import net.minecraft.client.model.ModelRenderer;
-import net.minecraft.entity.Entity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntity;
 import aes.motive.Motive;
 import cpw.mods.fml.client.FMLClientHandler;
 
@@ -17,12 +18,11 @@ public class ModelBreaker extends ModelBase {
 	}
 
 	@Override
-	public void render(Entity entity, float f, float f1, float f2, float f3, float f4, float f5) {
-		super.render(entity, f, f1, f2, f3, f4, f5);
+	public void render(TileEntity tileEntity, ItemStack stack, float scale) {
+		super.render(tileEntity, stack, scale);
 
 		FMLClientHandler.instance().getClient().renderEngine.bindTexture(Motive.resourceBreakerTexture);
-
-		this.outline.render(f5);
+		this.outline.render(scale);
 	}
 
 }

@@ -30,7 +30,7 @@ public class TileEntityBase extends TileEntity {
 	}
 
 	public void removeTileEntity() {
-//		Motive.log(this.worldObj, "TileEntity removed");
+		// Motive.log(this.worldObj, "TileEntity removed");
 		this.worldObj.removeBlockTileEntity(this.xCoord, this.yCoord, this.zCoord);
 		invalidate();
 	}

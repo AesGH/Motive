@@ -1,7 +1,6 @@
 package aes.motive;
 
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Set;
 
 import net.minecraft.world.World;
@@ -28,17 +27,22 @@ public class ConnectedBlocks {
 		this.blocks.add(location);
 	}
 
-	public ConnectedBlocks(Vector3i location, LinkedList<Vector3i> fixedBlockOffsets) {
+	public ConnectedBlocks(Vector3i location, Set<Vector3i> fixedBlockOffsets) {
 		this(location);
 		this.blocks.addAll(fixedBlockOffsets);
+	}
+
+	public ConnectedBlocks(World world, ConnectedBlocks connectedBlocks, Vector3i locationToToggle) {
+		this(connectedBlocks.location, connectedBlocks.blocks);
+		toggle(world, locationToToggle);
 	}
 
 	public ConnectedBlocks(World world, Vector3i location) {
 		this(location);
 
 		try {
-			final LinkedList<Vector3i> checked = new LinkedList<Vector3i>();
-			addConnectedBlocks(world, checked, this.location);
+			final Set<Vector3i> checked = new HashSet<Vector3i>();
+			addConnectedBlocks(world, checked, this.location, null);
 			return;
 		} catch (final TooManyBlocksException e) {
 		} catch (final CannotMoveAnotherMoverException e) {
@@ -47,7 +51,31 @@ public class ConnectedBlocks {
 		this.blocks.add(this.location);
 	}
 
-	public ConnectedBlocks add(Vector3i value) {
+	private void addConnectedBlocks(World world, Set<Vector3i> checked, Vector3i location, Set<Vector3i> candidates) throws TooManyBlocksException,
+			CannotMoveAnotherMoverException {
+		if (candidates != null && !candidates.contains(location))
+			return;
+		if (checked.contains(location))
+			return;
+		checked.add(location);
+
+		if (!canMoveBlock(world, location))
+			return;
+
+		this.blocks.add(location);
+		if (this.blocks.size() > MAX_BLOCKS_CAN_MOVE)
+			throw new TooManyBlocksException();
+
+		for (final ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
+			addConnectedBlocks(world, checked, location.increment(direction), candidates);
+		}
+	}
+
+	private boolean canMoveBlock(World world, Vector3i location) {
+		return WorldUtils.isNonEmptyBlock(world, location);
+	}
+
+	public ConnectedBlocks offset(Vector3i value) {
 		final ConnectedBlocks result = new ConnectedBlocks();
 
 		result.location = this.location.add(value);
@@ -58,30 +86,23 @@ public class ConnectedBlocks {
 		return result;
 	}
 
-	private void addConnectedBlocks(World world, LinkedList<Vector3i> checked, Vector3i coord) throws TooManyBlocksException, CannotMoveAnotherMoverException {
-		if (checked.contains(coord))
-			return;
-		checked.add(coord);
-
-		if (!canMoveBlock(world, coord))
-			return;
-
-		/*
-		 * final int blockId = world.getBlockId(coord.x, coord.y, coord.z); if
-		 * (blockId == Motive.BlockMover.blockID && checked.size() > 1) throw
-		 * new CannotMoveAnotherMoverException();
-		 */
-		
-		this.blocks.add(coord);
-		if (this.blocks.size() > MAX_BLOCKS_CAN_MOVE)
-			throw new TooManyBlocksException();
-		
-		for (final ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
-			addConnectedBlocks(world, checked, coord.increment(direction));
+	public boolean toggle(World world, Vector3i locationToToggle) {
+		if (!this.blocks.contains(locationToToggle)) {
+			this.blocks.add(locationToToggle);
+			return true;
 		}
-	}
 
-	private boolean canMoveBlock(World world, Vector3i location) {
-		return WorldUtils.isNonEmptyBlock(world, location);
+		final Set<Vector3i> candidates = new HashSet<Vector3i>();
+		candidates.addAll(this.blocks);
+		candidates.remove(locationToToggle);
+
+		this.blocks = new HashSet<Vector3i>();
+		final Set<Vector3i> checked = new HashSet<Vector3i>();
+		try {
+			addConnectedBlocks(world, checked, this.location, candidates);
+		} catch (final TooManyBlocksException e) {
+		} catch (final CannotMoveAnotherMoverException e) {
+		}
+		return true;
 	}
 }

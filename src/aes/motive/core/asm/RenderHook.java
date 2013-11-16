@@ -17,6 +17,10 @@ import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.common.ForgeDirection;
+
+import org.lwjgl.opengl.GL11;
+
+import aes.motive.tileentity.TileEntityMover;
 import aes.motive.tileentity.TileEntityMoverBase;
 import aes.utils.Obfuscation;
 import aes.utils.PrivateFieldAccess;
@@ -29,7 +33,7 @@ public class RenderHook {
 	public static boolean worldRendererContainsMovingBlocks(WorldRenderer worldrenderer) {
 		worldrenderer.worldObj.theProfiler.startSection("checkContainsMoving");
 
-		for (final TileEntityMoverBase tileEntityMoverBase : TileEntityMoverBase.getMovers(Minecraft.getMinecraft().theWorld).values()) {
+		for (final TileEntityMoverBase tileEntityMoverBase : TileEntityMoverBase.getMovers(worldrenderer.worldObj).values()) {
 			if (tileEntityMoverBase.moving && tileEntityMoverBase.affectedChunks.contains(new Vector2i(worldrenderer.posX >> 4, worldrenderer.posZ >> 4)))
 			// if(WorldUtils.containsChunk(tileEntityMoverBase.getAffectedBlocks(),
 			// chunkLocation))
@@ -50,6 +54,14 @@ public class RenderHook {
 	TileEntityMoverBase modifyingMover = null;
 
 	public List<Tessellator> movedTessellators = null;
+
+	private int chunkFromX;
+
+	private int chunkFromY;
+
+	private int chunkFromZ;
+
+	List<TileEntityMoverBase> moversToRemove = new LinkedList<TileEntityMoverBase>();
 
 	private RenderHook() {
 	}
@@ -92,6 +104,21 @@ public class RenderHook {
 		return null;
 	}
 
+	private void drawHighlightCube(TileEntityMover tileEntityMover, int x, int y, int z) {
+		final Vector3i location = new Vector3i(x, y, z);
+
+		final boolean[] isMovingNeighbour = new boolean[ForgeDirection.VALID_DIRECTIONS.length];
+
+		for (final ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
+			isMovingNeighbour[direction.ordinal()] = tileEntityMover.isMovingBlock(location.increment(direction));
+		}
+
+		for (final ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
+			renderHighlightFace((double) x + tileEntityMover.moved.x, (double) y + tileEntityMover.moved.y, (double) z + tileEntityMover.moved.z, direction,
+					isMovingNeighbour);
+		}
+	}
+
 	public TileEntityMoverBase getMoverMoving(World world, int x, int y, int z) {
 		Minecraft.getMinecraft().mcProfiler.startSection("getMoverMoving");
 
@@ -100,8 +127,11 @@ public class RenderHook {
 			{
 				final Vector3i coord = new Vector3i(x, y, z);
 				for (final TileEntityMoverBase mover : TileEntityMoverBase.getMovers(world).values()) {
-					if (mover.moving && mover.getConnectedBlocks().blocks.contains(coord))
-						// return null;
+					if (world.getBlockTileEntity(mover.xCoord, mover.yCoord, mover.zCoord) != mover) {
+						this.moversToRemove.add(mover);
+						continue;
+					}
+					if (mover.getConnectedBlocks().blocks.contains(coord))
 						return mover;
 				}
 			}
@@ -109,8 +139,69 @@ public class RenderHook {
 		} catch (final ConcurrentModificationException e) {
 			return getMoverMoving(world, x, y, z);
 		} finally {
+			for (final TileEntityMoverBase tileEntityMoverBase : this.moversToRemove) {
+				TileEntityMoverBase.removeMover(tileEntityMoverBase);
+			}
+			this.moversToRemove.clear();
 			Minecraft.getMinecraft().mcProfiler.endSection();
 		}
+	}
+
+	private boolean highlightIfConnected(boolean hasStartedDrawing, int glRenderList, int x, int y, int z) {
+		final World world = Minecraft.getMinecraft().theWorld;
+		final TileEntityMoverBase tileEntityMoverBase = getMoverMoving(world, x, y, z);
+		if (tileEntityMoverBase instanceof TileEntityMover) {
+			final TileEntityMover tileEntityMover = (TileEntityMover) tileEntityMoverBase;
+			if (tileEntityMover.getHighlight()) {
+
+				if (!hasStartedDrawing) {
+					GL11.glNewList(glRenderList + 1, GL11.GL_COMPILE);
+					GL11.glPushMatrix();
+
+					final int posXClip = this.chunkFromX & 1023;
+					final int posYClip = this.chunkFromY;
+					final int posZClip = this.chunkFromZ & 1023;
+
+					GL11.glTranslatef(posXClip, posYClip, posZClip);
+
+					final float f = 1.000001F;
+					GL11.glTranslatef(-8.0F, -8.0F, -8.0F);
+					GL11.glScalef(f, f, f);
+					GL11.glTranslatef(8.0F, 8.0F, 8.0F);
+					// ForgeHooksClient.beforeRenderPass(l1); Noop fo now, TODO:
+					// Event if anyone needs
+					Tessellator.instance.startDrawingQuads();
+					Tessellator.instance.setTranslation(-this.chunkFromX, -this.chunkFromY, -this.chunkFromZ);
+				}
+
+				drawHighlightCube(tileEntityMover, x, y, z);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public boolean highlightIfConnected(boolean hasStartedDrawing, int glRenderList, int pass, int chunkFromX, int chunkFromY, int chunkFromZ) {
+		// if(pass != 7) return false;
+		if (pass == 0)
+			return true;
+
+		this.chunkFromX = chunkFromX;
+		this.chunkFromY = chunkFromY;
+		this.chunkFromZ = chunkFromZ;
+		final int chunkToX = chunkFromX + 16;
+		final int chunkToY = chunkFromY + 16;
+		final int chunkToZ = chunkFromZ + 16;
+
+		boolean result = false;
+		for (int y = chunkFromY; y < chunkToY; ++y) {
+			for (int z = chunkFromZ; z < chunkToZ; ++z) {
+				for (int x = chunkFromX; x < chunkToX; ++x) {
+					result |= highlightIfConnected(hasStartedDrawing, glRenderList, x, y, z);
+				}
+			}
+		}
+		return result;
 	}
 
 	public boolean isBlockMoving(int par1, int par2, int par3) {
@@ -292,15 +383,83 @@ public class RenderHook {
 			return null;
 	}
 
-	public void renderTileEntity(TileEntitySpecialRenderer renderer, TileEntity tileEntity, double x, double y, double z, float partialTickTime) {
-		final TileEntityMoverBase blocks = getMoverMoving(Minecraft.getMinecraft().theWorld, (int) (x + TileEntityRenderer.staticPlayerX),
-				(int) (y + TileEntityRenderer.staticPlayerY), (int) (z + TileEntityRenderer.staticPlayerZ));
-		if (blocks != null) {
-			x += blocks.moved.x;
-			y += blocks.moved.y;
-			z += blocks.moved.z;
+	public void renderHighlightFace(double x, double y, double z, ForgeDirection direction, boolean[] isMovingNeighbour) {
+		if (isMovingNeighbour[direction.ordinal()])
+			return;
+
+		final double gap = 0.1D;
+
+		final double renderMinX = isMovingNeighbour[ForgeDirection.WEST.ordinal()] ? 0 : -gap;
+		final double renderMaxX = 1 + (isMovingNeighbour[ForgeDirection.EAST.ordinal()] ? 0 : gap);
+		final double renderMinY = isMovingNeighbour[ForgeDirection.DOWN.ordinal()] ? 0 : -gap;
+		final double renderMaxY = 1 + (isMovingNeighbour[ForgeDirection.UP.ordinal()] ? 0 : gap);
+		final double renderMinZ = isMovingNeighbour[ForgeDirection.NORTH.ordinal()] ? 0 : -gap;
+		final double renderMaxZ = 1 + (isMovingNeighbour[ForgeDirection.SOUTH.ordinal()] ? 0 : gap);
+
+		final double x1 = direction.offsetX > 0 ? x + renderMaxX : x + renderMinX;
+		final double x2 = direction.offsetX == 0 ? x + renderMaxX : x1;
+		final double y1 = direction.offsetY > 0 ? y + renderMaxY : y + renderMinY;
+		final double y2 = direction.offsetY == 0 ? y + renderMaxY : y1;
+		final double z1 = direction.offsetZ > 0 ? z + renderMaxZ : z + renderMinZ;
+		final double z2 = direction.offsetZ == 0 ? z + renderMaxZ : z1;
+
+		final Tessellator tessellator = Tessellator.instance;
+
+		tessellator.draw();
+		tessellator.startDrawingQuads();
+
+		GL11.glDisable(GL11.GL_TEXTURE_2D);
+		GL11.glEnable(GL11.GL_BLEND);
+		// GL11.glDisable(GL11.GL_DEPTH_TEST);
+
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+		Tessellator.instance.setBrightness(0x00F000F0);
+
+		tessellator.setColorRGBA(0xFF, 0xff, 0x4C, 0x20);
+
+		tessellator.setNormal(-direction.offsetX, -direction.offsetY, -direction.offsetZ);
+
+		if (direction.offsetX != 0) {
+			tessellator.addVertex(x1, y1, z1);
+			tessellator.addVertex(x1, y1, z2);
+			tessellator.addVertex(x2, y2, z2);
+			tessellator.addVertex(x2, y2, z1);
+		} else if (direction.offsetZ != 0) {
+			tessellator.addVertex(x1, y1, z1);
+			tessellator.addVertex(x2, y1, z2);
+			tessellator.addVertex(x2, y2, z2);
+			tessellator.addVertex(x1, y2, z1);
+		} else {
+			tessellator.addVertex(x1, y1, z1);
+			tessellator.addVertex(x1, y2, z2);
+			tessellator.addVertex(x2, y1, z2);
+			tessellator.addVertex(x2, y2, z1);
 		}
-		renderer.renderTileEntityAt(tileEntity, x, y, z, partialTickTime);
+
+		tessellator.draw();
+		tessellator.startDrawingQuads();
+
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
+		// GL11.glEnable(GL11.GL_DEPTH_TEST);
+	}
+
+	public void renderTileEntity(TileEntitySpecialRenderer renderer, TileEntity tileEntity, double x, double y, double z, float partialTickTime) {
+		final int xPos = (int) (x + TileEntityRenderer.staticPlayerX);
+		final int yPos = (int) (y + TileEntityRenderer.staticPlayerY);
+		final int zPos = (int) (z + TileEntityRenderer.staticPlayerZ);
+		final TileEntityMoverBase mover = getMoverMoving(Minecraft.getMinecraft().theWorld, xPos, yPos, zPos);
+		double renderX = x;
+		double renderY = y;
+		double renderZ = z;
+
+		if (mover != null) {
+			renderX += mover.moved.x;
+			renderY += mover.moved.y;
+			renderZ += mover.moved.z;
+		}
+		renderer.renderTileEntityAt(tileEntity, renderX, renderY, renderZ, partialTickTime);
+
 	}
 
 	public void resetMovingBlockBounds(World world, int x, int y, int z) {

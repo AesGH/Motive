@@ -3,6 +3,7 @@ package aes.motive.tileentity;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -30,9 +31,13 @@ import cpw.mods.fml.relauncher.SideOnly;
 public class TileEntityMoverBase extends TileEntityBase {
 	private static final boolean REMOVE_EMPTY_CONNECTED_BLOCKS = false;
 
-	private static Map<String, TileEntityMoverBase> moversServer = new HashMap<String, TileEntityMoverBase>();
+	private static Map<String, Map<String, TileEntityMoverBase>> movers = new HashMap<String, Map<String, TileEntityMoverBase>>();
 
-	private static Map<String, TileEntityMoverBase> moversClient = new HashMap<String, TileEntityMoverBase>();
+	public static void clientDimensionUnloaded(World world) {
+		final String key = getKeyForWorld(world);
+		Motive.log("MOVERS: Removing movers for " + key);
+		movers.remove(key);
+	}
 
 	private static boolean DEBUG_HALT_MOVE_HALFWAY() {
 		return false;
@@ -42,33 +47,80 @@ public class TileEntityMoverBase extends TileEntityBase {
 		return false;
 	}
 
+	private static void dumpMovers() {
+		Motive.log("current movers:");
+		for (final String key : movers.keySet()) {
+			final Map<String, TileEntityMoverBase> entities = movers.get(key);
+			Motive.log(key + " : " + entities.size() + " movers");
+		}
+	}
+
+	protected static String getKeyForWorld(World world) {
+		final String key = (world.isRemote ? "client" : "server") + "." + world.getWorldInfo().getWorldName() + "." + world.provider.dimensionId + "."
+				+ world.provider.getDimensionName();
+		return key;
+	}
+
 	public static TileEntityMoverBase getMover(World world, String uid) {
 		return getMovers(world).get(uid);
 	}
 
 	public static Map<String, TileEntityMoverBase> getMovers(World world) {
-		return world != null && world.isRemote ? moversClient : moversServer;
+		if (world == null) {
+			// world = MinecraftServer.getServer().getEntityWorld();
+			try {
+				throw new Exception("world is NULL getting movers");
+			} catch (final Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		final String key = getKeyForWorld(world);
+
+		if (!movers.containsKey(key)) {
+			movers.put(key, new HashMap<String, TileEntityMoverBase>());
+		}
+
+		return movers.get(key);
 	}
 
-	public static void removeMover(World world, TileEntityMoverBase tileEntityMover) {
+	public static void removeMover(TileEntityMoverBase tileEntityMover) {
+		final World world = tileEntityMover.worldObj;
+		Motive.log(world, "MOVERS: removing mover from " + getKeyForWorld(world));
 		getMovers(world).remove(tileEntityMover.getUid());
+		dumpMovers();
 	}
 
 	public static void serverStopped() {
-		moversServer = new HashMap<String, TileEntityMoverBase>();
-		moversClient = new HashMap<String, TileEntityMoverBase>();
+		Motive.log("MOVERS: Removing server movers");
+		final List<String> toRemove = new LinkedList<String>();
+		for (final String key : movers.keySet()) {
+			if (key.startsWith("server.")) {
+				toRemove.add(key);
+			}
+		}
+
+		for (final String key : toRemove) {
+			movers.remove(key);
+		}
+		dumpMovers();
 	}
 
-	public static void setMover(World world, TileEntityMoverBase tileEntityMover) {
+	public static void setMover(TileEntityMoverBase tileEntityMover) {
+		final World world = tileEntityMover.worldObj;
+		Motive.log(world, "MOVERS: adding mover to " + getKeyForWorld(world));
+
 		getMovers(world).put(tileEntityMover.getUid(), tileEntityMover);
+
+		dumpMovers();
 	}
 
 	private String uid;
-
 	public boolean moving = false;
 	public Vector3f moved = new Vector3f();
 	private ConnectedBlocks connectedBlocks;
 	private String status = "";
+
 	private String statusDetail = "";
 
 	private Vector3i[] affectedBlocks;
@@ -78,9 +130,11 @@ public class TileEntityMoverBase extends TileEntityBase {
 	final float MAX_SQUISH = 0.6f;
 
 	public float squishFactor, prevSquishFactor;
-
 	public float squishAmount = 0.6f;
+
 	public Set<Vector2i> affectedChunks;
+
+	private boolean registerMover;
 
 	public boolean canMove() {
 		return !isObstructed() && (this.worldObj.isRemote || !isMovingIntoUnloadedChunk());
@@ -159,10 +213,6 @@ public class TileEntityMoverBase extends TileEntityBase {
 		}
 	}
 
-	private float distanceFromSpeed() {
-		return 0.01f + getSpeed() * 0.3f;
-	}
-
 	/*
 	 * private void updatePlayersMovingWith(float movedX, float movedY, float
 	 * movedZ) {
@@ -183,6 +233,10 @@ public class TileEntityMoverBase extends TileEntityBase {
 	 * movedY - this.movedY, position.zCoord + movedZ - this.movedZ); break; } }
 	 * } } } } } }
 	 */
+
+	private float distanceFromSpeed() {
+		return 0.01f + getSpeed() * 0.3f;
+	}
 
 	public boolean getActive() {
 		return false;
@@ -263,25 +317,37 @@ public class TileEntityMoverBase extends TileEntityBase {
 				return false;
 			final int blockId = this.worldObj.getBlockId(to.x, to.y, to.z);
 			if (blockId != 0 && !getConnectedBlocks().blocks.contains(to)) {
-				
-				Block block = Block.blocksList[blockId];
-				if (block instanceof BlockFluid)
-					continue;
-				if(block instanceof BlockFluidBase)
-					continue;
 
-				if(block.isBlockReplaceable(worldObj, to.x, to.y, to.z))
+				final Block block = Block.blocksList[blockId];
+				if (block instanceof BlockFluid) {
 					continue;
-				
+				}
+				if (block instanceof BlockFluidBase) {
+					continue;
+				}
+
+				if (block.isBlockReplaceable(this.worldObj, to.x, to.y, to.z)) {
+					continue;
+				}
+
 				setStatus("Obstructed", block.getLocalizedName() + " at " + to);
 				/*
-				 * Motive.log("obstruction at " + to + " of type " + blockId
-				 * + " (" + Block.blocksList[blockId].getUnlocalizedName() +
-				 * ")");
+				 * Motive.log("obstruction at " + to + " of type " + blockId +
+				 * " (" + Block.blocksList[blockId].getUnlocalizedName() + ")");
 				 */return true;
 			}
 		}
 		return false;
+	}
+
+	protected void markConnectedBlocksForRender() {
+		if (this.worldObj == null || !this.worldObj.isRemote)
+			return;
+		if (this.connectedBlocks == null)
+			return;
+		for (final Vector3i location : this.connectedBlocks.blocks) {
+			WorldUtils.markBlockForRender(location.x, location.y, location.z);
+		}
 	}
 
 	public void moveEnd() {
@@ -305,7 +371,7 @@ public class TileEntityMoverBase extends TileEntityBase {
 
 			final Vector3i[] affected = this.affectedBlocks;
 
-			setConnectedBlocks(getConnectedBlocks().add(getPowered()));
+			setConnectedBlocks(getConnectedBlocks().offset(getPowered()));
 
 			clearAllAffectedBlocks(affected);
 			writeMovedBlocks(getLocation().add(getPowered()), blockInfos, affected);
@@ -338,6 +404,8 @@ public class TileEntityMoverBase extends TileEntityBase {
 		removeEmptyLockedBlocks();
 	}
 
+	// Computer craft interface
+
 	public void propertyChanged(String name, String value) {
 		if ("active".equals(name)) {
 			setActive("true".equals(value));
@@ -351,10 +419,8 @@ public class TileEntityMoverBase extends TileEntityBase {
 		}
 	}
 
-	// Computer craft interface
-
-	private LinkedList<Vector3i> readBlockListFromNBT(NBTTagCompound nbtTagCompound, String name) {
-		final LinkedList<Vector3i> result = new LinkedList<Vector3i>();
+	private Set<Vector3i> readBlockListFromNBT(NBTTagCompound nbtTagCompound, String name) {
+		final Set<Vector3i> result = new HashSet<Vector3i>();
 		final int[] coords = nbtTagCompound.getIntArray(name);
 		for (int i = 0; i < coords.length / 3; i++) {
 			result.add(new Vector3i(coords[i * 3], coords[i * 3 + 1], coords[i * 3 + 2]));
@@ -400,7 +466,8 @@ public class TileEntityMoverBase extends TileEntityBase {
 	}
 
 	private void removeEmptyLockedBlocks() {
-		if(!REMOVE_EMPTY_CONNECTED_BLOCKS) return;
+		if (!REMOVE_EMPTY_CONNECTED_BLOCKS)
+			return;
 		final LinkedList<Vector3i> toRemove = new LinkedList<Vector3i>();
 		for (final Vector3i location : getConnectedBlocks().blocks) {
 			if (!WorldUtils.isNonEmptyBlock(this.worldObj, location)) {
@@ -418,7 +485,7 @@ public class TileEntityMoverBase extends TileEntityBase {
 	@Override
 	public void removeTileEntity() {
 		super.removeTileEntity();
-		removeMover(this.worldObj, this);
+		removeMover(this);
 	}
 
 	@SideOnly(Side.SERVER)
@@ -430,8 +497,12 @@ public class TileEntityMoverBase extends TileEntityBase {
 	}
 
 	private void setConnectedBlocks(ConnectedBlocks connectedBlocks) {
+		if (connectedBlocks != null) {
+			markConnectedBlocksForRender();
+		}
 		this.connectedBlocks = connectedBlocks;
 		updateAffectedBlocks();
+		markConnectedBlocksForRender();
 	}
 
 	public boolean setLocked(boolean value) {
@@ -441,7 +512,7 @@ public class TileEntityMoverBase extends TileEntityBase {
 		if (value) {
 			setConnectedBlocks(new ConnectedBlocks(this.worldObj, getLocation()));
 		} else {
-			final LinkedList<Vector3i> lockedBlocks = new LinkedList<Vector3i>();
+			final Set<Vector3i> lockedBlocks = new HashSet<Vector3i>();
 			lockedBlocks.add(new Vector3i(this.xCoord, this.yCoord, this.zCoord));
 			setConnectedBlocks(new ConnectedBlocks(getLocation(), lockedBlocks));
 		}
@@ -480,15 +551,26 @@ public class TileEntityMoverBase extends TileEntityBase {
 		if (this.uid != null) {
 			if (this.uid.equals(value))
 				return;
-			
-			removeMover(this.worldObj, this);
-//			throw new Exception("uid already has a value");
+
+			removeMover(this);
+			// throw new Exception("uid already has a value");
 		}
 		if (value == null || value.equals("")) {
 			value = UUID.randomUUID().toString();
 		}
 		this.uid = value;
-		setMover(this.worldObj, this);
+		if (this.worldObj == null) {
+			this.registerMover = true;
+		} else {
+			setMover(this);
+		}
+
+	}
+
+	public boolean toggleConnectedBlock(Vector3i location) {
+		setConnectedBlocks(new ConnectedBlocks(this.worldObj, getConnectedBlocks(), location));
+		updateBlock();
+		return true;
 	}
 
 	@Override
@@ -512,6 +594,10 @@ public class TileEntityMoverBase extends TileEntityBase {
 	public void updateEntity() {
 		super.updateEntity();
 
+		if (this.registerMover) {
+			this.registerMover = false;
+			setMover(this);
+		}
 		if (this.moving) {
 			if (this.worldObj.isRemote) {
 				this.prevSquishFactor = this.squishFactor;
@@ -559,13 +645,10 @@ public class TileEntityMoverBase extends TileEntityBase {
 		if (this.moving) {
 			// Motive.log(this.worldObj, "UPDATING move " +
 			// this.moved.toString());
-			for (final Vector3i location : getConnectedBlocks().blocks) {
-				WorldUtils.markBlockForRender(location.x, location.y, location.z);
-			}
+			markConnectedBlocksForRender();
 
 			this.worldObj.spawnParticle("reddust", this.xCoord + this.moved.x + 0.5F, this.yCoord + this.moved.y + 0.5F, this.zCoord + this.moved.z + 0.5F,
 					-0.4, 0, 1);
-			return;
 		}
 	}
 
@@ -621,7 +704,7 @@ public class TileEntityMoverBase extends TileEntityBase {
 		// remove from client if moved out of range
 		if (!anyBlocksLoaded) {
 			Motive.log(this.worldObj, "Moved out of range, unregistering mover");
-			removeMover(this.worldObj, this);
+			removeMover(this);
 		}
 
 		/*

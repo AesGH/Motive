@@ -14,26 +14,25 @@ public class TileEntityMote extends TileEntityMoverBase {
 		return true;
 	}
 
+	@Override
+	public Block getBlockType() {
+		return Motive.BlockMote;
+	};
+
 	public ForgeDirection getCurrentDirection() {
 		return this.currentDirection;
-	};
+	}
 
 	@Override
 	public Vector3i getPowered() {
 		return new Vector3i(getCurrentDirection().offsetX, getCurrentDirection().offsetY, getCurrentDirection().offsetZ);
-	}
+	};
 
 	@Override
 	public float getSpeed() {
 		return 0.5f;
-	};
+	}
 
-	@Override
-    public Block getBlockType()
-    {
-		return Motive.BlockMote;
-    }
-	
 	@Override
 	public void onBlockNeighborChange() {
 		super.onBlockNeighborChange();

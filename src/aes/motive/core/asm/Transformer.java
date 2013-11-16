@@ -144,7 +144,16 @@ public class Transformer implements IClassTransformer {
 
 			final InsnList ins = prepareForRenderHookCall();
 			ins.insert(beforeReturnLabel);
-			ins.add(renderHookCall("resetMovingTesselator", "()V"));
+			/*
+			 * // ins.add(new VarInsnNode(ALOAD, 1)); ins.add(new
+			 * VarInsnNode(ILOAD, 2)); ins.add(new VarInsnNode(ILOAD, 3));
+			 * ins.add(new VarInsnNode(ILOAD, 4)); //
+			 * ins.add(renderHookCall("highlightIfConnected",
+			 * "(Lnet/minecraft/client/renderer/RenderBlocks;III)V"));
+			 * ins.add(renderHookCall("highlightIfConnected", "(III)V"));
+			 * 
+			 * addGetRenderHookInstance(ins);
+			 */ins.add(renderHookCall("resetMovingTesselator", "()V"));
 			ins.add(new InsnNode(IRETURN));
 			methodNode.instructions.add(ins);
 		}
@@ -268,6 +277,10 @@ public class Transformer implements IClassTransformer {
 
 	LinkedList<MethodTransformer> transforms;
 
+	protected void addGetRenderHookInstance(final InsnList ins) {
+		ins.add(new FieldInsnNode(GETSTATIC, "aes/motive/core/asm/RenderHook", "INSTANCE", "Laes/motive/core/asm/RenderHook;"));
+	}
+
 	protected AbstractInsnNode getField(String className, String fieldName, String descriptor) {
 		return new FieldInsnNode(GETFIELD, Obfuscation.getClassName(className), Obfuscation.getFieldName(className, fieldName, descriptor),
 				Obfuscation.getDescriptor(descriptor));
@@ -275,7 +288,7 @@ public class Transformer implements IClassTransformer {
 
 	protected InsnList prepareForRenderHookCall() {
 		final InsnList ins = new InsnList();
-		ins.add(new FieldInsnNode(GETSTATIC, "aes/motive/core/asm/RenderHook", "INSTANCE", "Laes/motive/core/asm/RenderHook;"));
+		addGetRenderHookInstance(ins);
 		return ins;
 	}
 

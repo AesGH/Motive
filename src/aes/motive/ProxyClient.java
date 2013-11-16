@@ -1,6 +1,7 @@
 package aes.motive;
 
 import net.minecraftforge.client.MinecraftForgeClient;
+import aes.motive.render.ItemMoverRemoteControlRenderer;
 import aes.motive.render.TileEntityBreakerRenderer;
 import aes.motive.render.TileEntityMoteRenderer;
 import aes.motive.render.TileEntityMoverRenderer;
@@ -29,5 +30,8 @@ public class ProxyClient extends aes.motive.ProxyServer {
 		final TileEntityBreakerRenderer breakerRenderer = new TileEntityBreakerRenderer();
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityBreaker.class, breakerRenderer);
 		MinecraftForgeClient.registerItemRenderer(Motive.BlockBreaker.blockID, breakerRenderer);
+
+		final ItemMoverRemoteControlRenderer remoteRenderer = new ItemMoverRemoteControlRenderer();
+		MinecraftForgeClient.registerItemRenderer(Motive.ItemMoverRemoteControl.itemID, remoteRenderer);
 	}
 }

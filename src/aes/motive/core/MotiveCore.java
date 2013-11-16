@@ -3,7 +3,12 @@ package aes.motive.core;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.EventPriority;
+import net.minecraftforge.event.ForgeSubscribe;
+import net.minecraftforge.event.world.WorldEvent;
 import aes.motive.core.asm.Transformer;
+import aes.motive.tileentity.TileEntityMoverBase;
 import aes.utils.Obfuscation;
 
 import com.google.common.eventbus.EventBus;
@@ -76,8 +81,14 @@ public class MotiveCore extends DummyModContainer implements IFMLLoadingPlugin, 
 		Obfuscation.init((Boolean) data.get("runtimeDeobfuscationEnabled"));
 	}
 
+	@ForgeSubscribe(priority = EventPriority.HIGHEST)
+	public void onDimensionUnload(WorldEvent.Unload event) {
+		TileEntityMoverBase.clientDimensionUnloaded(event.world);
+	}
+
 	@Override
 	public boolean registerBus(EventBus bus, LoadController controller) {
+		MinecraftForge.EVENT_BUS.register(this);
 		bus.register(this);
 		return true;
 	}

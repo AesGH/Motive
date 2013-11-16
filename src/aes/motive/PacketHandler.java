@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.LinkedList;
@@ -12,6 +13,7 @@ import java.util.Set;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.ItemStack;
 import net.minecraft.network.INetworkManager;
 import net.minecraft.network.NetLoginHandler;
 import net.minecraft.network.packet.NetHandler;
@@ -24,6 +26,7 @@ import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import aes.base.TileEntityBase;
+import aes.motive.item.ItemMoverRemoteControl;
 import aes.motive.tileentity.TileEntityMoverBase;
 import aes.utils.Obfuscation;
 import aes.utils.PrivateFieldAccess;
@@ -124,82 +127,97 @@ public class PacketHandler implements IConnectionHandler, IPacketHandler {
 
 	public void onPacket(World world, EntityPlayer player, Packet250CustomPayload packet, DataInputStream inputStream) {
 		try {
-			final String uid = inputStream.readUTF();
+			final String command = inputStream.readUTF();
+			if ("Remote".equals(command)) {
+				final int currentItem = inputStream.readInt();
+				final int x = inputStream.readInt();
+				final int y = inputStream.readInt();
+				final int z = inputStream.readInt();
 
-			final String action = inputStream.readUTF();
-
-			final TileEntityBase tileEntity = TileEntityMoverBase.getMover(world, uid);
-
-			if (tileEntity == null) {
-				if (world.isRemote) {
-					final ByteArrayOutputStream bos = new ByteArrayOutputStream(8);
-					final DataOutputStream outputStream = new DataOutputStream(bos);
-
-					outputStream.writeUTF(uid);
-					outputStream.writeUTF("sendIfInRange");
-					outputStream.writeUTF(player.getEntityName());
-
-					final Packet250CustomPayload packet1 = new Packet250CustomPayload();
-					packet1.channel = this.channelName;
-					packet1.data = bos.toByteArray();
-					packet1.length = bos.size();
-
-					PacketDispatcher.sendPacketToServer(packet1);
-					return;
+				final ItemStack stack = player.inventory.getStackInSlot(currentItem);
+				if (stack.itemID == Motive.ItemMoverRemoteControl.itemID) {
+					ItemMoverRemoteControl.playerUsedRemote(stack, player, world, x, y, z);
 				}
-				throw new Exception("No chatty tile entity found for uid " + uid);
+				return;
 			}
+			if ("SendMethod".equals(command)) {
+				final String uid = inputStream.readUTF();
 
-			Method m = null;
-			final Method[] methods = this.tileEntityClass.getMethods();
-			for (final Method method : methods) {
-				if (method.getName().equals(action)) {
-					m = method;
-					break;
+				final String action = inputStream.readUTF();
+
+				final TileEntityBase tileEntity = TileEntityMoverBase.getMover(world, uid);
+
+				if (tileEntity == null) {
+					if (world.isRemote) {
+						final ByteArrayOutputStream bos = new ByteArrayOutputStream(8);
+						final DataOutputStream outputStream = new DataOutputStream(bos);
+
+						outputStream.writeUTF(uid);
+						outputStream.writeUTF("sendIfInRange");
+						outputStream.writeUTF(player.getEntityName());
+
+						final Packet250CustomPayload packet1 = new Packet250CustomPayload();
+						packet1.channel = this.channelName;
+						packet1.data = bos.toByteArray();
+						packet1.length = bos.size();
+
+						PacketDispatcher.sendPacketToServer(packet1);
+						return;
+					}
+					throw new Exception("No chatty tile entity found for uid " + uid);
 				}
-			}
 
-			if (m == null)
-				throw new Exception("No method " + action + " found in tile entity");
-
-			final Object[] args = new Object[m.getParameterTypes().length];
-			int i = 0;
-			for (final Class<?> argType : m.getParameterTypes()) {
-				final String name = argType.getName();
-				if (name.equals("java.lang.Float") || name.equals("float")) {
-					args[i] = inputStream.readFloat();
-				} else if (name.equals("java.lang.Integer") || name.equals("int")) {
-					args[i] = inputStream.readInt();
-				} else if (name.equals("java.lang.Boolean") || name.equals("boolean")) {
-					args[i] = inputStream.readBoolean();
-				} else if (name.equals("java.lang.String") || name.equals("String")) {
-					args[i] = inputStream.readUTF();
-				} else if (name.equals(Vector3i.class.getName())) {
-					final int x = inputStream.readInt();
-					final int y = inputStream.readInt();
-					final int z = inputStream.readInt();
-					args[i] = new Vector3i(x, y, z);
-				} else
-					throw new Exception("unexpected type " + name + ". expecting Float, Integer, Boolean, String or Vector3i.");
-				i++;
-			}
-			if (tileEntity != null) {
-				final MethodToInvokeOnTileEntity method = new MethodToInvokeOnTileEntity(m, tileEntity, args);
-
-				try {
-					method.method.invoke(method.tileEntity, method.args);
-				} catch (final IllegalAccessException e) {
-					e.printStackTrace();
-				} catch (final IllegalArgumentException e) {
-					e.printStackTrace();
-				} catch (final InvocationTargetException e) {
-					e.printStackTrace();
+				Method m = null;
+				final Method[] methods = this.tileEntityClass.getMethods();
+				for (final Method method : methods) {
+					if (method.getName().equals(action)) {
+						m = method;
+						break;
+					}
 				}
-				/*
-				 * synchronized (methodsToInvokeNextGameLoop) {
-				 * methodsToInvokeNextGameLoop.add(new MethodToInvoke(m,
-				 * tileEntity, args)); }
-				 */}
+
+				if (m == null)
+					throw new Exception("No method " + action + " found in tile entity");
+
+				final Object[] args = new Object[m.getParameterTypes().length];
+				int i = 0;
+				for (final Class<?> argType : m.getParameterTypes()) {
+					final String name = argType.getName();
+					if (name.equals("java.lang.Float") || name.equals("float")) {
+						args[i] = inputStream.readFloat();
+					} else if (name.equals("java.lang.Integer") || name.equals("int")) {
+						args[i] = inputStream.readInt();
+					} else if (name.equals("java.lang.Boolean") || name.equals("boolean")) {
+						args[i] = inputStream.readBoolean();
+					} else if (name.equals("java.lang.String") || name.equals("String")) {
+						args[i] = inputStream.readUTF();
+					} else if (name.equals(Vector3i.class.getName())) {
+						final int x = inputStream.readInt();
+						final int y = inputStream.readInt();
+						final int z = inputStream.readInt();
+						args[i] = new Vector3i(x, y, z);
+					} else
+						throw new Exception("unexpected type " + name + ". expecting Float, Integer, Boolean, String or Vector3i.");
+					i++;
+				}
+				if (tileEntity != null) {
+					final MethodToInvokeOnTileEntity method = new MethodToInvokeOnTileEntity(m, tileEntity, args);
+
+					try {
+						method.method.invoke(method.tileEntity, method.args);
+					} catch (final IllegalAccessException e) {
+						e.printStackTrace();
+					} catch (final IllegalArgumentException e) {
+						e.printStackTrace();
+					} catch (final InvocationTargetException e) {
+						e.printStackTrace();
+					}
+					/*
+					 * synchronized (methodsToInvokeNextGameLoop) {
+					 * methodsToInvokeNextGameLoop.add(new MethodToInvoke(m,
+					 * tileEntity, args)); }
+					 */}
+			}
 		} catch (final Exception e) {
 			e.printStackTrace();
 		}
@@ -242,6 +260,28 @@ public class PacketHandler implements IConnectionHandler, IPacketHandler {
 		}
 	}
 
+	public void sendPlayerUsedRemote(int currentItem, int dimensionId, int x, int y, int z) {
+		final ByteArrayOutputStream bos = new ByteArrayOutputStream(8);
+		final DataOutputStream outputStream = new DataOutputStream(bos);
+
+		try {
+			outputStream.writeUTF("Remote");
+			outputStream.writeInt(currentItem);
+			outputStream.writeInt(x);
+			outputStream.writeInt(y);
+			outputStream.writeInt(z);
+
+			final Packet250CustomPayload packet1 = new Packet250CustomPayload();
+			packet1.channel = this.channelName;
+			packet1.data = bos.toByteArray();
+			packet1.length = bos.size();
+
+			PacketDispatcher.sendPacketToServer(packet1);
+		} catch (final IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	private void sendThisMethod(boolean fromRemote, World worldObj, TileEntityMoverBase tileEntity, Object... args) {
 		if (worldObj.isRemote != fromRemote)
 			return;
@@ -257,6 +297,7 @@ public class PacketHandler implements IConnectionHandler, IPacketHandler {
 			final ByteArrayOutputStream bos = new ByteArrayOutputStream(8);
 			final DataOutputStream outputStream = new DataOutputStream(bos);
 
+			outputStream.writeUTF("SendMethod");
 			outputStream.writeUTF(tileEntity.getUid());
 			/*
 			 * outputStream.writeInt(worldObj.provider.dimensionId);

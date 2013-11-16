@@ -40,7 +40,8 @@ public class BlockBase extends BlockContainer {
 
 	@Override
 	public TileEntity createNewTileEntity(World world) {
-//		Motive.log(world, "createNewTileEntity: " + this.getClass().getName());
+		// Motive.log(world, "createNewTileEntity: " +
+		// this.getClass().getName());
 		return null;
 	}
 

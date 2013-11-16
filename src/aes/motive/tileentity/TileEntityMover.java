@@ -12,9 +12,14 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 	private boolean active = false;
 	private Vector3i powered;
 	private float speed;
+	private boolean highlight;
 	public MoverMode mode = MoverMode.AwayFromSignal;
 
 	static String[] commands = new String[] { "isActive", "isMoving", "move", "lock" };
+
+	public TileEntityMover() {
+		this.blockType = Motive.BlockMover;
+	}
 
 	@Override
 	public void attach(IComputerAccess computer) {
@@ -68,6 +73,14 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 		return this.mode == MoverMode.ComputerControlled;
 	}
 
+	public boolean canConnectTo(Vector3i location) {
+		for (final ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
+			if (isConnectedTo(location.increment(direction)))
+				return true;
+		}
+		return false;
+	}
+
 	@Override
 	public void detach(IComputerAccess computer) {
 	}
@@ -75,6 +88,15 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 	@Override
 	public boolean getActive() {
 		return this.active;
+	}
+
+	@Override
+	public Block getBlockType() {
+		return Motive.BlockMover;
+	}
+
+	public boolean getHighlight() {
+		return this.highlight;
 	}
 
 	private int getIntArg(Object[] arguments, int i) throws Exception {
@@ -116,11 +138,22 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 		return "engine";
 	}
 
+	public boolean isConnectedTo(Vector3i location) {
+		return getConnectedBlocks().blocks.contains(location);
+	}
+
+	public boolean isMovingBlock(Vector3i location) {
+		return getConnectedBlocks().blocks.contains(location);
+	}
+
 	@Override
 	public void propertyChanged(String name, String value) {
 		super.propertyChanged(name, value);
 		if ("mode".equals(name)) {
 			setMode(MoverMode.values()[java.lang.Integer.parseInt(value)]);
+		}
+		if ("highlight".equals(name)) {
+			setHighlight("true".equals(value));
 		}
 	}
 
@@ -128,9 +161,19 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 	public void readFromNBT(NBTTagCompound nbtTagCompound) {
 		super.readFromNBT(nbtTagCompound);
 		setActive(nbtTagCompound.getBoolean("active"));
+		setHighlight(nbtTagCompound.getBoolean("highlight"));
 		this.mode = MoverMode.values()[nbtTagCompound.getInteger("mode")];
 		setSpeed(nbtTagCompound.getFloat("speed"));
 
+	}
+
+	@Override
+	public void removeTileEntity() {
+		if (getHighlight()) {
+			this.highlight = false;
+			markConnectedBlocksForRender();
+		}
+		super.removeTileEntity();
 	}
 
 	@Override
@@ -139,6 +182,16 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 			this.active = value;
 			Motive.log(this.worldObj, "active set to " + this.active);
 			updateBlock();
+		}
+	}
+
+	public void setHighlight(boolean highlight) {
+		if (this.highlight != highlight) {
+			this.highlight = highlight;
+			Motive.log(this.worldObj, "highlight set to " + this.highlight);
+			updateBlock();
+
+			markConnectedBlocksForRender();
 		}
 	}
 
@@ -165,12 +218,6 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 	}
 
 	@Override
-    public Block getBlockType()
-    {
-		return Motive.BlockMover;
-    }
-	
-	@Override
 	boolean updatePowered() {
 		if (this.mode != MoverMode.ComputerControlled) {
 			int poweredX = 0, poweredY = 0, poweredZ = 0;
@@ -195,6 +242,7 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 	public void writeToNBT(NBTTagCompound nbtTagCompound) {
 		super.writeToNBT(nbtTagCompound);
 		nbtTagCompound.setBoolean("active", getActive());
+		nbtTagCompound.setBoolean("highlight", getHighlight());
 		nbtTagCompound.setInteger("mode", this.mode.ordinal());
 		nbtTagCompound.setFloat("speed", getSpeed());
 	}
