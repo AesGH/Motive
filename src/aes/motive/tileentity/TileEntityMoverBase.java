@@ -10,10 +10,12 @@ import java.util.UUID;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFluid;
+import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.chunk.Chunk;
+import net.minecraftforge.common.ForgeDirection;
 import net.minecraftforge.fluids.BlockFluidBase;
 import aes.base.TileEntityBase;
 import aes.motive.BlockInfo;
@@ -56,6 +58,9 @@ public class TileEntityMoverBase extends TileEntityBase {
 	}
 
 	protected static String getKeyForWorld(World world) {
+		if (world == null)
+			return "(null)";
+
 		final String key = (world.isRemote ? "client" : "server") + "." + world.getWorldInfo().getWorldName() + "." + world.provider.dimensionId + "."
 				+ world.provider.getDimensionName();
 		return key;
@@ -67,7 +72,6 @@ public class TileEntityMoverBase extends TileEntityBase {
 
 	public static Map<String, TileEntityMoverBase> getMovers(World world) {
 		if (world == null) {
-			// world = MinecraftServer.getServer().getEntityWorld();
 			try {
 				throw new Exception("world is NULL getting movers");
 			} catch (final Exception e) {
@@ -213,27 +217,6 @@ public class TileEntityMoverBase extends TileEntityBase {
 		}
 	}
 
-	/*
-	 * private void updatePlayersMovingWith(float movedX, float movedY, float
-	 * movedZ) {
-	 * 
-	 * if (worldObj.isRemote && false) { // Movement movement = new
-	 * Movement(lockedBlocks, worldObj, xCoord, // yCoord, zCoord, (int)movedX,
-	 * (int)movedY, (int)movedZ);
-	 * 
-	 * for (final Object playerObj : worldObj.playerEntities) { final
-	 * EntityPlayer playerMoving = (EntityPlayer) playerObj; if
-	 * (playerMoving.onGround) { final Vec3 position =
-	 * playerMoving.getPosition(1F); // playerMoving.get for (final Vector3i
-	 * coord : movement.affectedBlocks.blocks) { if (position.xCoord >= coord.x
-	 * && position.xCoord <= coord.x + 1) { if (position.zCoord >= coord.z &&
-	 * position.zCoord <= coord.z + 1) { if (position.yCoord - 1.62 >= coord.y +
-	 * 1 && position.yCoord - 1.62 <= coord.y + 2) { playerMoving
-	 * .setPosition(position.xCoord + movedX - this.movedX, position.yCoord +
-	 * movedY - this.movedY, position.zCoord + movedZ - this.movedZ); break; } }
-	 * } } } } } }
-	 */
-
 	private float distanceFromSpeed() {
 		return 0.01f + getSpeed() * 0.3f;
 	}
@@ -311,10 +294,18 @@ public class TileEntityMoverBase extends TileEntityBase {
 			final Chunk chunkFrom = this.worldObj.getChunkFromBlockCoords(location.x, location.z);
 			if (!chunkFrom.isChunkLoaded)
 				return false;
+
 			final Vector3i to = location.add(getPowered());
+
+			if (to.x < -30000000 || to.z < -30000000 || to.x >= 30000000 || to.z >= 30000000 || to.y < 0 || to.y >= 256) {
+				setStatus("Obstructed", "end of world at " + to);
+				return true;
+			}
+
 			final Chunk chunk = this.worldObj.getChunkFromBlockCoords(to.x, to.z);
 			if (!chunk.isChunkLoaded)
 				return false;
+
 			final int blockId = this.worldObj.getBlockId(to.x, to.y, to.z);
 			if (blockId != 0 && !getConnectedBlocks().blocks.contains(to)) {
 
@@ -356,18 +347,17 @@ public class TileEntityMoverBase extends TileEntityBase {
 		this.moving = false;
 		this.moved = new Vector3f();
 
-		Motive.log(this.worldObj, "move END from " + getLocation());
+		Motive.log(this.worldObj, "moving " + getLockedCount() + " blocks " + getPowered().getForgeDirection().name() + " from " + getLocation());
 
-		// removeMover(world, tileEntityMover);
-		/*
-		 * if (this.worldObj.isRemote && removeTileEntityRenderer()) { //
-		 * Motive.log(this.worldObj, "removed rendering engine moving"); }
-		 */
 		updateAffectedBlocks();
 
 		final WorldUtils we = new WorldUtils(this.worldObj);
 		if (canMove()) {
 			final LinkedList<BlockInfo> blockInfos = readMovedBlocks(we);
+
+			for (final Object entity : this.worldObj.loadedEntityList) {
+				moveEntityIfConnected((Entity) entity);
+			}
 
 			final Vector3i[] affected = this.affectedBlocks;
 
@@ -378,33 +368,47 @@ public class TileEntityMoverBase extends TileEntityBase {
 		}
 	}
 
+	protected void moveEntityIfConnected(Entity entity) {
+		if (entity != null) {
+			Vector3i location = new Vector3i((int) Math.floor(entity.posX), (int) Math.floor(entity.posY - entity.yOffset + 2), (int) Math.floor(entity.posZ));
+			for (int i = 0; i <= 4; i++) {
+				if (this.connectedBlocks.blocks.contains(location)) {
+					entity.posX += getPowered().x;
+					entity.posY += getPowered().y;
+					entity.posZ += getPowered().z;
+					entity.lastTickPosX += getPowered().x;
+					entity.lastTickPosY += getPowered().y;
+					entity.lastTickPosZ += getPowered().z;
+					entity.prevPosX += getPowered().x;
+					entity.prevPosY += getPowered().y;
+					entity.prevPosZ += getPowered().z;
+					entity.serverPosX += getPowered().x;
+					entity.serverPosY += getPowered().y;
+					entity.serverPosZ += getPowered().z;
+					entity.setPosition(entity.posX, entity.posY, entity.posZ);
+					Motive.log(this.worldObj, "moved " + entity.getClass().getName() + entity.getEntityName());
+					return;
+				}
+				location = location.increment(ForgeDirection.DOWN);
+			}
+		}
+	}
+
 	public void moveStart(Vector3i powered) {
 		Motive.packetHandler.sendThisMethodToClient(this.worldObj, this, powered);
-		// Motive.log(this.worldObj, "move START from " + getLocation());
 
 		this.moving = true;
 		this.moved = new Vector3f();
 
 		if (this.worldObj.isRemote) {
 			setPowered(powered);
-			// final Vector3i vector3i = getLocation();
-			// Motive.log(this.worldObj, "added rendering engine moving");
-			// RenderHook.INSTANCE.movers.put(vector3i, this);
 		}
-
-		// updateBlock();
 	}
 
-	/*
-	 * void Movement(LinkedList<Vector3i> fixedBlockOffsets, World world, int x,
-	 * int y, int z) { }
-	 */
 	@Override
 	public void onBlockNeighborChange() {
 		removeEmptyLockedBlocks();
 	}
-
-	// Computer craft interface
 
 	public void propertyChanged(String name, String value) {
 		if ("active".equals(name)) {
@@ -425,8 +429,6 @@ public class TileEntityMoverBase extends TileEntityBase {
 		for (int i = 0; i < coords.length / 3; i++) {
 			result.add(new Vector3i(coords[i * 3], coords[i * 3 + 1], coords[i * 3 + 2]));
 		}
-		// ModMotive.log(worldObj, "read tileEntity " + name +
-		// " from NBT, count = " + result.size());
 		return result;
 	}
 
@@ -551,9 +553,7 @@ public class TileEntityMoverBase extends TileEntityBase {
 		if (this.uid != null) {
 			if (this.uid.equals(value))
 				return;
-
 			removeMover(this);
-			// throw new Exception("uid already has a value");
 		}
 		if (value == null || value.equals("")) {
 			value = UUID.randomUUID().toString();
@@ -691,7 +691,7 @@ public class TileEntityMoverBase extends TileEntityBase {
 			}
 
 			anyBlocksLoaded = true;
-			we.setBlockMetadataAndTileEntityWithoutUpdate(c.x, c.y, c.z, block.blockid, block.metadata, block.entity, false);
+			we.setBlockMetadataAndTileEntityWithoutUpdate(c.x, c.y, c.z, block.blockid, block.metadata, block.entity, true);
 			we.setNextBlockUpdate(c, block.blockid, block.nextUpdate);
 		}
 
@@ -753,16 +753,9 @@ public class TileEntityMoverBase extends TileEntityBase {
 		 */
 		if (!this.worldObj.isRemote) {
 			for (final Vector3i c : affectedLocations) {
-				final Chunk chunkFrom = this.worldObj.getChunkFromBlockCoords(c.x, c.z);
-				if (!chunkFrom.isChunkLoaded) {
-					continue;
+				if (this.worldObj.getChunkFromBlockCoords(c.x, c.z).isChunkLoaded) {
+					we.world.notifyBlockOfNeighborChange(c.x, c.y, c.z, we.world.getBlockId(c.x, c.y, c.z));
 				}
-
-				/*
-				 * if (this.worldObj.isRemote) {
-				 * we.world.markBlockForUpdate(c.x, c.y, c.z); } else {
-				 */we.world.notifyBlockOfNeighborChange(c.x, c.y, c.z, we.world.getBlockId(c.x, c.y, c.z));
-				// }
 			}
 		}
 

@@ -4,9 +4,9 @@ import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import aes.motive.Motive;
-import cpw.mods.fml.client.FMLClientHandler;
+import aes.utils.Vector3d;
 
-public class ModelBreaker extends ModelBase {
+public class ModelBreaker extends ModelMotiveBase {
 	private final ModelRenderer outline;
 
 	public ModelBreaker() {
@@ -18,11 +18,22 @@ public class ModelBreaker extends ModelBase {
 	}
 
 	@Override
-	public void render(TileEntity tileEntity, ItemStack stack, float scale) {
-		super.render(tileEntity, stack, scale);
+	protected void renderModel(TileEntity tileEntity, ItemStack stack, float partialTickTime) {
+		drawBoltedFrame();
 
-		FMLClientHandler.instance().getClient().renderEngine.bindTexture(Motive.resourceBreakerTexture);
-		this.outline.render(scale);
+		startDrawing();
+		texture(Motive.resourceBreakerTexture);
+
+		setUVOffset(0, 0);
+
+		final double inset = 8D;
+
+		addQuadWithUV(new Vector3d(inset, inset, inset), 0, 0, new Vector3d(inset, 128 - inset, inset), 0, 128, new Vector3d(128 - inset, 128 - inset, inset),
+				128, 128, new Vector3d(128 - inset, inset, inset), 128, 0);
+
+		addQuadWithUV(new Vector3d(inset, inset, inset), 0, 0, new Vector3d(128 - inset, inset, inset), 128, 0, new Vector3d(128 - inset, 128 - inset, inset),
+				128, 128, new Vector3d(inset, 128 - inset, inset), 0, 128);
+
+		draw();
 	}
-
 }

@@ -1,12 +1,12 @@
 package aes.motive.render;
 
-import aes.base.TileEntitySpecialRendererBase;
-import aes.motive.render.model.ModelBase;
+import aes.base.TileEntityRendererBase;
 import aes.motive.render.model.ModelBreaker;
+import aes.motive.render.model.ModelMotiveBase;
 
-public class TileEntityBreakerRenderer extends TileEntitySpecialRendererBase {
+public class TileEntityBreakerRenderer extends TileEntityRendererBase {
 	@Override
-	protected ModelBase getModel() {
+	protected ModelMotiveBase getModel() {
 		return new ModelBreaker();
 	}
 }

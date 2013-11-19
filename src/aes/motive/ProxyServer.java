@@ -18,13 +18,13 @@ public class ProxyServer {
 		LanguageRegistry.addName(Motive.BlockMote, "Mote");
 
 		GameRegistry.registerBlock(Motive.BlockVe, "VeBlock");
-		LanguageRegistry.addName(Motive.BlockVe, "Ve");
+		LanguageRegistry.addName(Motive.BlockVe, "Motive Frame");
 
 		GameRegistry.registerBlock(Motive.BlockMover, "MoverBlock");
-		LanguageRegistry.addName(Motive.BlockMover, "Mover");
+		LanguageRegistry.addName(Motive.BlockMover, "Motive Engine");
 
 		GameRegistry.registerBlock(Motive.BlockBreaker, "BreakerBlock");
-		LanguageRegistry.addName(Motive.BlockBreaker, "Breaker");
+		LanguageRegistry.addName(Motive.BlockBreaker, "Motive Breaker");
 	}
 
 	public void registerChannels() {

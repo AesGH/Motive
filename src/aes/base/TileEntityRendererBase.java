@@ -1,50 +1,20 @@
 package aes.base;
 
-import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.IBlockAccess;
 import net.minecraftforge.client.IItemRenderer;
 import net.minecraftforge.common.ForgeDirection;
 
 import org.lwjgl.opengl.GL11;
 
+import aes.base.render.RenderUtils;
 import aes.motive.render.model.ModelBase;
+import aes.motive.render.model.ModelMotiveBase;
 
-public abstract class TileEntitySpecialRendererBase extends TileEntitySpecialRenderer implements IItemRenderer {
-	public static float getRotationFromDirection(ForgeDirection direction) {
-		switch (direction) {
-		case NORTH:
-			return 0F;
-		case SOUTH:
-			return 180F;
-		case WEST:
-			return 90F;
-		case EAST:
-			return -90F;
-		default:
-			return 0F;
-		}
-	}
-
-	protected ModelBase model;
-
-	static int angle = 0;
-
-	public static int currentRenderPass = 0;
-
+public abstract class TileEntityRendererBase extends TileEntitySpecialRenderer implements IItemRenderer {
 	public static void glRotateForFaceDir(ForgeDirection direction) {
-		// if (direction == ForgeDirection.UP) {
-		GL11.glTranslatef(0F, 1F, 0F);
-
-		/*
-		 * if (!Keyboard.isKeyDown(61)) { GL11.glRotatef(angle, 1.0F, 0F, 0F);
-		 * angle++; if (angle >= 360) angle -= 360; // GL11.glRotatef(90F, 1.0F,
-		 * 0F, 0F); }
-		 */
-
+		GL11.glTranslatef(0.5F, 0.5F, 0.5F);
 		switch (direction) {
 		case UP:
 			GL11.glRotatef(90F, 1.0F, 0F, 0F);
@@ -52,40 +22,34 @@ public abstract class TileEntitySpecialRendererBase extends TileEntitySpecialRen
 		case DOWN:
 			GL11.glRotatef(-90F, 1.0F, 0F, 0F);
 			break;
+		case NORTH:
+			GL11.glRotatef(0, 0F, 1.0F, 0F);
+			break;
+		case SOUTH:
+			GL11.glRotatef(180, 0F, 1.0F, 0F);
+			break;
+		case WEST:
+			GL11.glRotatef(90, 0F, 1.0F, 0F);
+			break;
+		case EAST:
+			GL11.glRotatef(-90, 0F, 1.0F, 0F);
+			break;
 		default:
-			GL11.glRotatef(getRotationFromDirection(direction), 0F, 1.0F, 0F);
+			break;
 		}
-
-		GL11.glTranslatef(0F, -1F, 0F);
-		// }
+		GL11.glTranslatef(-0.5F, -0.5F, -0.5F);
 	}
 
-	public static void setBrightness(IBlockAccess w, int x, int y, int z) {
-		Tessellator.instance.setBrightness(w.getLightBrightnessForSkyBlocks(x, y, z, 0));
-	}
+	protected ModelMotiveBase model;
 
-	public static void setBrightnessDirect(IBlockAccess w, int x, int y, int z) {
-		final int i = w.getLightBrightnessForSkyBlocks(x, y, z, 0);
-		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, i & 0xFFFF, i >> 16);
-	}
-
-	public static void setFullBrightness() {
-		Tessellator.instance.setBrightness(0x00F000F0);
-	}
-
-	public static void setFullColor() {
-		Tessellator.instance.setColorRGBA(255, 255, 255, 255);
-	}
-
-	protected TileEntitySpecialRendererBase() {
+	protected TileEntityRendererBase() {
 		this.model = getModel();
 	}
 
-	protected abstract ModelBase getModel();
+	protected abstract ModelMotiveBase getModel();
 
 	private ModelBase getModelForRendering() {
 		return this.model;
-		// return this.model = getModel();
 	}
 
 	@Override
@@ -95,7 +59,7 @@ public abstract class TileEntitySpecialRendererBase extends TileEntitySpecialRen
 
 	protected void light(TileEntity tileEntity) {
 		try {
-			setBrightnessDirect(tileEntity.worldObj, tileEntity.xCoord, tileEntity.yCoord, tileEntity.zCoord);
+			RenderUtils.setBrightnessDirect(tileEntity.worldObj, tileEntity.xCoord, tileEntity.yCoord, tileEntity.zCoord);
 			/*
 			 * final float blockBrightness =
 			 * tileEntity.blockType.getBlockBrightness(tileEntity.worldObj,
@@ -115,23 +79,22 @@ public abstract class TileEntitySpecialRendererBase extends TileEntitySpecialRen
 		}
 	}
 
-	private void renderAsItem(ItemStack stack, float x, float y, float z, float scale) {
-		renderAsItem(stack, x, y, z, scale, 180, 0, 0);
+	protected void renderAsItem(ItemStack stack, float x, float y, float z, float scale) {
+		renderAsItem(stack, x, y, z, scale, 0, 0, 0);
 	}
 
-	private void renderAsItem(ItemStack stack, float x, float y, float z, float scale, float xRot, float yRot, float zRot) {
+	protected void renderAsItem(ItemStack stack, float x, float y, float z, float scale, float xRot, float yRot, float zRot) {
 		GL11.glPushMatrix();
 
 		GL11.glTranslatef(x, y, z);
-		GL11.glScalef(scale, scale, scale);
 
-		GL11.glTranslatef(0F, 1F, 0F);
+		GL11.glTranslatef(0.5F, 0.5F, 0.5F);
 		GL11.glRotatef(xRot, 1f, 0f, 0f);
 		GL11.glRotatef(yRot, 0f, 1f, 0f);
 		GL11.glRotatef(zRot, 0f, 0f, 1f);
-		GL11.glTranslatef(0F, -1F, 0F);
+		GL11.glTranslatef(-0.5F, -0.5F, -0.5F);
 
-		getModelForRendering().render(null, stack, scale * 0.0625F);
+		getModelForRendering().render(null, stack, scale, 0);
 
 		GL11.glPopMatrix();
 	}
@@ -143,15 +106,16 @@ public abstract class TileEntitySpecialRendererBase extends TileEntitySpecialRen
 			renderAsItem(item, 0f, 0f, 0f, 1f);
 			break;
 		case EQUIPPED:
-			renderAsItem(item, 0f, 1f, 1f, 1f);
+			renderAsItem(item, 0, 0, 0, 1f, 90, 0, 0);
 			break;
 		case INVENTORY:
-			renderAsItem(item, 0f, -1f, 0f, 1f);
+			renderAsItem(item, 0f, -0.1f, 0f, 1f, 0, 180, 180);
 			break;
 		case EQUIPPED_FIRST_PERSON:
-			renderAsItem(item, 0f, 0.2f, 0f, 1f, 180, 90, 0);
+			renderAsItem(item, 0, 0, 0f, 1f, 0, 90, 180);
 			break;
 		case FIRST_PERSON_MAP:
+			renderAsItem(item, 0f, 0f, 0f, 2f, 180, 90, 0);
 			break;
 		}
 	}
@@ -159,14 +123,12 @@ public abstract class TileEntitySpecialRendererBase extends TileEntitySpecialRen
 	@Override
 	public void renderTileEntityAt(TileEntity tileEntity, double x, double y, double z, float partialTickTime) {
 		GL11.glPushMatrix();
-		GL11.glTranslatef((float) x + 0.5F, (float) y - 0.5F, (float) z + 0.5F);
+		GL11.glTranslatef((float) x, (float) y, (float) z);
 		// light(tileEntity);
-
-		GL11.glPushMatrix();
 		glRotateForFaceDir(BlockBase.getFacing(tileEntity.worldObj, tileEntity.xCoord, tileEntity.yCoord, tileEntity.zCoord));
-		getModelForRendering().render(tileEntity, null, 0.0625F);
 
-		GL11.glPopMatrix();
+		getModelForRendering().render(tileEntity, null, 1, partialTickTime);
+
 		GL11.glPopMatrix();
 	}
 

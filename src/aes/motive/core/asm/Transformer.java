@@ -115,7 +115,6 @@ public class Transformer implements IClassTransformer {
 	}
 
 	public class TransformBlockRenderer extends MethodTransformer {
-
 		public TransformBlockRenderer() {
 			super("net.minecraft.client.renderer.RenderBlocks", "renderBlockByRenderType", "(Lnet/minecraft/block/Block;III)Z");
 		}
@@ -183,6 +182,25 @@ public class Transformer implements IClassTransformer {
 		}
 	}
 
+	public class TransformEntityRenderer extends MethodTransformer {
+		public TransformEntityRenderer() {
+			super("net.minecraft.client.renderer.EntityRenderer", "updateCameraAndRender", "(F)V");
+		}
+
+		@Override
+		public void transform(ClassNode classNode, MethodNode methodNode) {
+			InsnList ins = prepareForRenderHookCall();
+			ins.add(renderHookCall("offsetViewEntityPosition", "()V"));
+
+			methodNode.instructions.insert(ins);
+
+			ins = prepareForRenderHookCall();
+			ins.add(renderHookCall("resetViewEntityPosition", "()V"));
+
+			methodNode.instructions.insertBefore(methodNode.instructions.getLast().getPrevious(), ins);
+		}
+	}
+
 	public class TransformRenderGlobal_drawSelectionBox extends MethodTransformer {
 
 		public TransformRenderGlobal_drawSelectionBox() {
@@ -220,6 +238,27 @@ public class Transformer implements IClassTransformer {
 			final InsnList ins = prepareForRenderHookCall();
 			ins.add(renderHookCall("updateWorldRendererTileEntities", "()V"));
 			methodNode.instructions.insertBefore(methodNode.instructions.getFirst(), ins);
+		}
+	}
+
+	public class TransformRenderManager extends MethodTransformer {
+		public TransformRenderManager() {
+			super("net.minecraft.client.renderer.entity.RenderManager", "renderEntity", "(Lnet/minecraft/entity/Entity;F)V");
+		}
+
+		@Override
+		public void transform(ClassNode classNode, MethodNode methodNode) {
+			InsnList ins = prepareForRenderHookCall();
+			ins.add(new VarInsnNode(ALOAD, 1));
+			ins.add(renderHookCall("offsetOtherEntityPosition", "(Lnet/minecraft/entity/Entity;)V"));
+
+			methodNode.instructions.insert(ins);
+
+			ins = prepareForRenderHookCall();
+			ins.add(new VarInsnNode(ALOAD, 1));
+			ins.add(renderHookCall("resetOtherEntityPosition", "(Lnet/minecraft/entity/Entity;)V"));
+
+			methodNode.instructions.insertBefore(methodNode.instructions.getLast().getPrevious(), ins);
 		}
 	}
 
@@ -275,10 +314,76 @@ public class Transformer implements IClassTransformer {
 		}
 	}
 
+	public class TransformWorldRenderer extends MethodTransformer {
+		public TransformWorldRenderer() {
+			super("net.minecraft.client.renderer.WorldRenderer", "updateRenderer", "()V");
+		}
+
+		@Override
+		public void transform(ClassNode classNode, MethodNode methodNode) throws Exception {
+			final LabelNode labelContinue = new LabelNode();
+
+			final InsnList ins = prepareForRenderHookCall();
+			ins.add(new VarInsnNode(ILOAD, 14));
+			ins.add(new VarInsnNode(ALOAD, 0));
+			ins.add(new FieldInsnNode(GETFIELD, "net/minecraft/client/renderer/WorldRenderer", "glRenderList", "I"));
+			ins.add(new VarInsnNode(ILOAD, 11));
+			ins.add(new VarInsnNode(ILOAD, 1));
+			ins.add(new VarInsnNode(ILOAD, 2));
+			ins.add(new VarInsnNode(ILOAD, 3));
+			ins.add(renderHookCall("highlightIfConnected", "(ZIIIII)Z"));
+			ins.add(new JumpInsnNode(IFEQ, labelContinue));
+			ins.add(new InsnNode(Opcodes.ICONST_1));
+			ins.add(new InsnNode(Opcodes.DUP));
+			ins.add(new VarInsnNode(Opcodes.ISTORE, 13));
+			ins.add(new VarInsnNode(Opcodes.ISTORE, 12));
+			ins.add(new VarInsnNode(Opcodes.ILOAD, 11));
+			ins.add(new JumpInsnNode(Opcodes.IFLE, labelContinue));
+			ins.add(new InsnNode(Opcodes.ICONST_1));
+			ins.add(new VarInsnNode(Opcodes.ISTORE, 14));
+			ins.add(labelContinue);
+
+			AbstractInsnNode insertLocation = null;
+			final ListIterator<AbstractInsnNode> iter = methodNode.instructions.iterator();
+
+			while (iter.hasNext()) {
+				AbstractInsnNode targetNode = iter.next();
+				if (targetNode.getOpcode() == INVOKEVIRTUAL) {
+					final MethodInsnNode methodInsnNode = (MethodInsnNode) targetNode;
+					if (methodInsnNode.name.equals("renderBlockByRenderType")) {
+						while (iter.hasNext()) {
+							targetNode = iter.next();
+							if (targetNode.getOpcode() == ILOAD) {
+								final VarInsnNode varInsnNode = (VarInsnNode) targetNode;
+								if (varInsnNode.var == 14) {
+									insertLocation = targetNode;
+									break;
+								}
+							}
+						}
+						break;
+					}
+				}
+			}
+
+			if (insertLocation == null)
+				throw new Exception("couldn't find first insert point");
+
+			methodNode.instructions.insertBefore(insertLocation, ins);
+		}
+	}
+
 	LinkedList<MethodTransformer> transforms;
 
 	protected void addGetRenderHookInstance(final InsnList ins) {
 		ins.add(new FieldInsnNode(GETSTATIC, "aes/motive/core/asm/RenderHook", "INSTANCE", "Laes/motive/core/asm/RenderHook;"));
+	}
+
+	protected void dumpMethod(byte[] bytes, final MethodNode methodNode) {
+		final ClassReader classReader2 = new ClassReader(bytes);
+		final PrintWriter printWriter = new PrintWriter(System.out);
+		final DumpTraceClassVisitor myClassVisitor = new DumpTraceClassVisitor(new TraceClassVisitor(printWriter), methodNode.name, methodNode.desc);
+		classReader2.accept(myClassVisitor, ClassReader.SKIP_DEBUG);
 	}
 
 	protected AbstractInsnNode getField(String className, String fieldName, String descriptor) {
@@ -307,6 +412,11 @@ public class Transformer implements IClassTransformer {
 			this.transforms.add(new TransformRenderGlobal_renderEntities());
 			this.transforms.add(new TransformWorld());
 			this.transforms.add(new TransformBlock());
+
+			this.transforms.add(new TransformEntityRenderer());
+			this.transforms.add(new TransformWorldRenderer());
+			this.transforms.add(new TransformRenderManager());
+
 		}
 
 		if (this.transforms == null)
@@ -337,17 +447,19 @@ public class Transformer implements IClassTransformer {
 							MotiveCore.log("Transformed class " + transform.className + " method " + transform.methodName + ". Result " + result.length
 									+ " bytes.");
 
+							dumpMethod(bytes, methodNode);
+
+							MotiveCore.log("vvvvvvvvvvvvvvvvvvv");
+
+							dumpMethod(result, methodNode);
+
 							bytes = result;
 							break;
 						} catch (final Exception e) {
 							MotiveCore.log("Exception transforming class " + transform.className + " method " + transform.methodName + ". " + e.getMessage()
 									+ " @ " + e.getStackTrace());
 							e.printStackTrace();
-							final ClassReader classReader2 = new ClassReader(bytes);
-							final PrintWriter printWriter = new PrintWriter(System.out);
-							final DumpTraceClassVisitor myClassVisitor = new DumpTraceClassVisitor(new TraceClassVisitor(printWriter), methodNode.name,
-									methodNode.desc);
-							classReader2.accept(myClassVisitor, ClassReader.SKIP_DEBUG);
+							dumpMethod(bytes, methodNode);
 
 							return null;
 						}

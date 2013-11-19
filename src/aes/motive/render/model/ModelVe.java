@@ -5,10 +5,9 @@ import net.minecraft.tileentity.TileEntity;
 
 public class ModelVe extends ModelMotiveBase {
 	@Override
-	public void render(TileEntity tileEntity, ItemStack stack, float scale) {
-		super.render(tileEntity, stack, scale);
-
-		renderFrontCase(scale);
-		renderFrontStruts(scale);
-	}
+	protected void renderModel(TileEntity tileEntity, ItemStack stack, float partialTickTime) {
+		rotate(180, 1, 0, 0);
+		drawBoltedFace(true);
+//		drawDiagonalStruts();
+	};
 }

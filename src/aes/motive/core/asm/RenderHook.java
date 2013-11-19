@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
+import net.minecraft.entity.Entity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
@@ -25,6 +26,7 @@ import aes.motive.tileentity.TileEntityMoverBase;
 import aes.utils.Obfuscation;
 import aes.utils.PrivateFieldAccess;
 import aes.utils.Vector2i;
+import aes.utils.Vector3f;
 import aes.utils.Vector3i;
 
 public class RenderHook {
@@ -62,6 +64,12 @@ public class RenderHook {
 	private int chunkFromZ;
 
 	List<TileEntityMoverBase> moversToRemove = new LinkedList<TileEntityMoverBase>();
+
+	private Vector3f viewEntityOffset;
+
+	Vector3f entityOffset = new Vector3f();
+
+	Entity offsettingEntity;
 
 	private RenderHook() {
 	}
@@ -104,7 +112,7 @@ public class RenderHook {
 		return null;
 	}
 
-	private void drawHighlightCube(TileEntityMover tileEntityMover, int x, int y, int z) {
+	private void drawHighlightCube(TileEntityMover tileEntityMover, int x, int y, int z, float density) {
 		final Vector3i location = new Vector3i(x, y, z);
 
 		final boolean[] isMovingNeighbour = new boolean[ForgeDirection.VALID_DIRECTIONS.length];
@@ -115,8 +123,20 @@ public class RenderHook {
 
 		for (final ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
 			renderHighlightFace((double) x + tileEntityMover.moved.x, (double) y + tileEntityMover.moved.y, (double) z + tileEntityMover.moved.z, direction,
-					isMovingNeighbour);
+					isMovingNeighbour, density);
 		}
+	}
+
+	TileEntityMoverBase getMoverForEntity(Entity entity) {
+		if (entity == null)
+			return null;
+
+		TileEntityMoverBase tileEntityMoverBase = null;
+		for (int i = -1; tileEntityMoverBase == null && i <= 3; i++) {
+			tileEntityMoverBase = RenderHook.INSTANCE.getMoverMoving(entity.worldObj, (int) Math.floor(entity.posX),
+					(int) Math.floor(entity.posY - entity.yOffset - i), (int) Math.floor(entity.posZ));
+		}
+		return tileEntityMoverBase;
 	}
 
 	public TileEntityMoverBase getMoverMoving(World world, int x, int y, int z) {
@@ -152,9 +172,11 @@ public class RenderHook {
 		final TileEntityMoverBase tileEntityMoverBase = getMoverMoving(world, x, y, z);
 		if (tileEntityMoverBase instanceof TileEntityMover) {
 			final TileEntityMover tileEntityMover = (TileEntityMover) tileEntityMoverBase;
-			if (tileEntityMover.getHighlight()) {
+			if (tileEntityMover.getHighlight() || (tileEntityMover.getFlashPct() != 0)) {
 
-				if (!hasStartedDrawing) {
+				if (
+				// !hasStartedDrawing &&
+				!Tessellator.instance.isDrawing) {
 					GL11.glNewList(glRenderList + 1, GL11.GL_COMPILE);
 					GL11.glPushMatrix();
 
@@ -174,7 +196,7 @@ public class RenderHook {
 					Tessellator.instance.setTranslation(-this.chunkFromX, -this.chunkFromY, -this.chunkFromZ);
 				}
 
-				drawHighlightCube(tileEntityMover, x, y, z);
+				drawHighlightCube(tileEntityMover, x, y, z, tileEntityMover.getHighlight() ? 1f : (tileEntityMover.getFlashPct()/50f));
 				return true;
 			}
 		}
@@ -198,6 +220,9 @@ public class RenderHook {
 			for (int z = chunkFromZ; z < chunkToZ; ++z) {
 				for (int x = chunkFromX; x < chunkToX; ++x) {
 					result |= highlightIfConnected(hasStartedDrawing, glRenderList, x, y, z);
+					if (result) {
+						hasStartedDrawing = true;
+					}
 				}
 			}
 		}
@@ -237,6 +262,35 @@ public class RenderHook {
 			return;
 		}
 		this.movedTessellators = null;
+	}
+
+	public void offsetEntityPosition(Entity entity) {
+		this.offsettingEntity = entity;
+
+		final TileEntityMoverBase tileEntityMoverBase = getMoverForEntity(entity);
+		if (tileEntityMoverBase != null) {
+			this.entityOffset = new Vector3f(tileEntityMoverBase.moved);
+			entity.posX += this.entityOffset.x;
+			entity.posY += this.entityOffset.y;
+			entity.posZ += this.entityOffset.z;
+
+			entity.lastTickPosX += this.entityOffset.x;
+			entity.lastTickPosY += this.entityOffset.y;
+			entity.lastTickPosZ += this.entityOffset.z;
+		} else {
+			this.entityOffset = new Vector3f();
+		}
+	}
+
+	public void offsetOtherEntityPosition(Entity entity) {
+		if (Minecraft.getMinecraft().thePlayer != entity) {
+			offsetEntityPosition(entity);
+		}
+	}
+
+	public void offsetViewEntityPosition() {
+		offsetEntityPosition(Minecraft.getMinecraft().renderViewEntity);
+		this.viewEntityOffset = this.entityOffset;
 	}
 
 	public MovingObjectPosition rayTraceBlocks_do_do(World world, Vec3 from, Vec3 to, boolean includeLiquids, boolean includeEmpty) {
@@ -383,7 +437,7 @@ public class RenderHook {
 			return null;
 	}
 
-	public void renderHighlightFace(double x, double y, double z, ForgeDirection direction, boolean[] isMovingNeighbour) {
+	public void renderHighlightFace(double x, double y, double z, ForgeDirection direction, boolean[] isMovingNeighbour, float density) {
 		if (isMovingNeighbour[direction.ordinal()])
 			return;
 
@@ -410,13 +464,12 @@ public class RenderHook {
 
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
 		GL11.glEnable(GL11.GL_BLEND);
-		// GL11.glDisable(GL11.GL_DEPTH_TEST);
-
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 
 		Tessellator.instance.setBrightness(0x00F000F0);
 
-		tessellator.setColorRGBA(0xFF, 0xff, 0x4C, 0x20);
+		// GL11.glColorMask(0xff, 0x00, 00, 0x40);
+		tessellator.setColorRGBA(0xFF, 0xff, 0xff, (int)(density * 0x40));
 
 		tessellator.setNormal(-direction.offsetX, -direction.offsetY, -direction.offsetZ);
 
@@ -441,7 +494,6 @@ public class RenderHook {
 		tessellator.startDrawingQuads();
 
 		GL11.glEnable(GL11.GL_TEXTURE_2D);
-		// GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
 
 	public void renderTileEntity(TileEntitySpecialRenderer renderer, TileEntity tileEntity, double x, double y, double z, float partialTickTime) {
@@ -460,6 +512,18 @@ public class RenderHook {
 		}
 		renderer.renderTileEntityAt(tileEntity, renderX, renderY, renderZ, partialTickTime);
 
+	}
+
+	public void resetEntityPosition(Entity entity) {
+		if (entity == null)
+			return;
+		entity.posX -= this.entityOffset.x;
+		entity.posY -= this.entityOffset.y;
+		entity.posZ -= this.entityOffset.z;
+
+		entity.lastTickPosX -= this.entityOffset.x;
+		entity.lastTickPosY -= this.entityOffset.y;
+		entity.lastTickPosZ -= this.entityOffset.z;
 	}
 
 	public void resetMovingBlockBounds(World world, int x, int y, int z) {
@@ -485,6 +549,18 @@ public class RenderHook {
 		this.movedTessellators = null;
 	}
 
+	public void resetOtherEntityPosition(Entity entity) {
+		if (Minecraft.getMinecraft().thePlayer != entity) {
+			resetEntityPosition(entity);
+		}
+	}
+
+	public void resetViewEntityPosition() {
+		this.offsettingEntity = Minecraft.getMinecraft().renderViewEntity;
+		this.entityOffset = this.viewEntityOffset;
+		resetEntityPosition(Minecraft.getMinecraft().renderViewEntity);
+	}
+
 	@SuppressWarnings("unchecked")
 	public void updateWorldRendererTileEntities() {
 		final RenderGlobal renderGlobal = Minecraft.getMinecraft().renderGlobal;
@@ -496,5 +572,4 @@ public class RenderHook {
 			}
 		}
 	}
-
 }

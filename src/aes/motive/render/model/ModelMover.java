@@ -8,10 +8,9 @@ import aes.motive.item.ItemMoverRemoteControl;
 
 public class ModelMover extends ModelMotiveBase {
 	@Override
-	public void render(TileEntity tileEntity, ItemStack stack, float scale) {
-		super.render(tileEntity, stack, scale);
-		renderGlassCase(scale);
-		renderStruts(scale);
+	protected void renderModel(TileEntity tileEntity, ItemStack stack, float partialTickTime) {
+		drawBoltedFrame();
+		drawDiagonalStruts();
 
 		final InventoryPlayer inventoryPlayer = Minecraft.getMinecraft().thePlayer.inventory;
 		final ItemStack selectedItem = inventoryPlayer.getCurrentItem();
@@ -28,7 +27,7 @@ public class ModelMover extends ModelMotiveBase {
 		 * 
 		 * GL11.glPopMatrix(); GL11.glEnable(GL11.GL_LIGHTING); }
 		 */
-		renderMote(scale, pairedWithCurrentRemote);
+		drawMote(pairedWithCurrentRemote);
 
-	}
+	};
 }

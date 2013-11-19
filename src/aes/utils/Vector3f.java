@@ -16,6 +16,10 @@ public class Vector3f {
 		this.z = z;
 	}
 
+	public Vector3f(Vector3f vector) {
+		this(vector.x, vector.y, vector.z);
+	}
+
 	public Vector3f(Vector3i vector) {
 		this(vector.x, vector.y, vector.z);
 	}
@@ -40,6 +44,10 @@ public class Vector3f {
 
 	public Vector3f increment(ForgeDirection direction) {
 		return new Vector3f(this.x + direction.offsetX, this.y + direction.offsetY, this.z + direction.offsetZ);
+	}
+
+	public boolean isEmpty() {
+		return this.x == 0 && this.y == 0 && this.z == 0;
 	}
 
 	public Vector3f normalise() {

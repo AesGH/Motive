@@ -50,6 +50,15 @@ public class Vector3i {
 		return other.x == this.x && other.y == this.y && other.z == this.z;
 	}
 
+	public ForgeDirection getForgeDirection() {
+		for (final ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
+			if (direction.offsetX == this.x && direction.offsetY == this.y && direction.offsetZ == this.z)
+				return direction;
+		}
+
+		return ForgeDirection.UNKNOWN;
+	}
+
 	@Override
 	public int hashCode() {
 		return this.x * 23 ^ this.y * 37 ^ this.z * 73;

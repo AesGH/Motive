@@ -1,7 +1,6 @@
 package aes.motive.block;
 
 import net.minecraft.block.material.Material;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import aes.base.BlockBase;
@@ -21,11 +20,15 @@ public class BlockMote extends BlockBase {
 		return new TileEntityMote();
 	};
 
-	@Override
-	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int metadata, float what, float these, float are) {
+	private TileEntityMote getTileEntity(World world, int x, int y, int z) {
 		final TileEntity tileEntity = world.getBlockTileEntity(x, y, z);
-		if (tileEntity == null || player.isSneaking())
-			return false;
-		return true;
+		if (tileEntity instanceof TileEntityMote)
+			return (TileEntityMote) tileEntity;
+		return null;
 	}
+
+	@Override
+	public void onPostBlockPlaced(World par1World, int par2, int par3, int par4, int par5) {
+		getTileEntity(par1World, par2, par3, par4).onBlockNeighborChange();
+	};
 }

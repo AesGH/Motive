@@ -1,4 +1,4 @@
-package aes.motive;
+package aes.motive.test;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -16,6 +16,8 @@ import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.tileentity.TileEntitySign;
 import net.minecraft.world.World;
 import net.minecraftforge.common.ForgeDirection;
+import aes.motive.Command;
+import aes.motive.Motive;
 import aes.motive.item.ItemMoverRemoteControl;
 import aes.motive.tileentity.TileEntityBreaker;
 import aes.motive.tileentity.TileEntityMover;
@@ -87,6 +89,15 @@ public class TestCommand extends Command {
 
 			sendChat(commandSender, "Running test allblocks");
 			testAllKnownBlocks();
+		} else if (testName.equals("boat")) {
+
+			if (arguments.size() > 2) {
+				sendChat(commandSender, getCommandUsage(commandSender));
+				return;
+			}
+
+			sendChat(commandSender, "Running test boat");
+			testBoat();
 		} else if (testName.equals("miner")) {
 			int gridSize = 74;
 			if (arguments.size() > 2) {
@@ -131,19 +142,24 @@ public class TestCommand extends Command {
 		sendChat(this.sender, "Setting " + eastWestDistance + " " + eastWestDirection.name() + " and " + northSouthDistance + " " + northSouthDirection.name()
 				+ " and " + height + " UP from " + start + " to " + (blockID == 0 ? "air" : Block.blocksList[blockID].getLocalizedName()));
 
-		final Vector3i end = start.increment(eastWestDirection, eastWestDistance + 1).increment(northSouthDirection, northSouthDistance + 1)
-				.increment(ForgeDirection.UP, height + 1);
+		final Vector3i end = start.increment(eastWestDirection, eastWestDistance).increment(northSouthDirection, northSouthDistance)
+				.increment(ForgeDirection.UP, height);
 
 		for (int x = start.x; x != end.x; x += eastWestDirection.offsetX) {
 			for (int z = start.z; z != end.z; z += northSouthDirection.offsetZ) {
-				for (int y = start.increment(ForgeDirection.UP).y; y != end.y && y > 0 && y < 256; y += ForgeDirection.UP.offsetY) {
-					// if (this.world.getBlockId(x, y, z) != blockID ||
-					// this.world.getBlockMetadata(x, y, z) != meta) {
-					this.world.setBlock(x, y, z, blockID, meta, 3);
-					// }
+				for (int y = start.y; y != end.y && y > 0 && y < 256; y += ForgeDirection.UP.offsetY) {
+					set(new Vector3i(x, y, z), blockID, meta);
 				}
 			}
 		}
+	}
+
+	private void set(Vector3i location, int blockId) {
+		set(location, blockId, 0);
+	}
+
+	private void set(Vector3i location, int blockId, int meta) {
+		this.world.setBlock(location.x, location.y, location.z, blockId, meta, 3);
 	}
 
 	private void testAllKnownBlocks() {
@@ -214,9 +230,10 @@ public class TestCommand extends Command {
 								final Block block = recipe.block;
 
 								Motive.log("setting " + x + "," + y + "," + z + " to " + block.getLocalizedName());
-								this.world.setBlock(x, y, z, block.blockID, recipe.metadata, 3);
+								final Vector3i location = new Vector3i(x, y, z);
+								set(location, block.blockID, recipe.metadata);
 
-								this.world.setBlock(x, y, z + 1, Block.signPost.blockID, 0, 0);
+								set(location.increment(ForgeDirection.SOUTH), Block.signPost.blockID);
 								final TileEntitySign sign = (TileEntitySign) this.world.getBlockTileEntity(x, y, z + 1);
 
 								final String name = block.getLocalizedName();
@@ -239,10 +256,10 @@ public class TestCommand extends Command {
 		}
 
 		final Vector3i engineLocation = platformStart.increment(ForgeDirection.WEST).increment(ForgeDirection.UP);
-		this.world.setBlock(engineLocation.x, engineLocation.y, engineLocation.z, Motive.BlockMover.blockID, 0, 3);
+		set(engineLocation, Motive.BlockMover.blockID);
 
 		final Vector3i powerLocation = engineLocation.increment(ForgeDirection.WEST);
-		this.world.setBlock(powerLocation.x, powerLocation.y, powerLocation.z, Block.blockRedstone.blockID, 0, 3);
+		set(powerLocation, Block.blockRedstone.blockID);
 
 		final TileEntityMover tileEntityMover = (TileEntityMover) this.world.getBlockTileEntity(engineLocation.x, engineLocation.y, engineLocation.z);
 		tileEntityMover.setLocked(true);
@@ -261,6 +278,105 @@ public class TestCommand extends Command {
 		}
 	}
 
+	protected void testBoat() {
+		final int areaSize = 10;
+		clear(this.playerLocation.increment(ForgeDirection.DOWN, 3).increment(ForgeDirection.WEST, 10).increment(ForgeDirection.NORTH, 10),
+				ForgeDirection.EAST, areaSize + 40, ForgeDirection.SOUTH, areaSize + 40, 255);
+
+		final Vector3i start = this.playerLocation.increment(ForgeDirection.EAST, 10).increment(ForgeDirection.SOUTH, 10);
+
+		set(start, ForgeDirection.EAST, 4, ForgeDirection.SOUTH, 3, 1, Block.planks.blockID);
+
+		final Vector3i level2 = start.increment(ForgeDirection.UP).increment(ForgeDirection.WEST);
+		set(level2, ForgeDirection.EAST, 6, ForgeDirection.SOUTH, 3, 1, Block.planks.blockID);
+
+		set(level2.increment(ForgeDirection.UP), ForgeDirection.EAST, 6, ForgeDirection.SOUTH, 3, 1, 0);
+		set(level2.increment(ForgeDirection.EAST).increment(ForgeDirection.SOUTH), ForgeDirection.EAST, 4, ForgeDirection.SOUTH, 1, 1, 0);
+
+		final Vector3i level3 = level2.increment(ForgeDirection.UP).increment(ForgeDirection.NORTH);
+		set(level3, ForgeDirection.EAST, 6, ForgeDirection.SOUTH, 5, 1, Block.planks.blockID);
+		set(level3.increment(ForgeDirection.WEST, 2).increment(ForgeDirection.SOUTH), ForgeDirection.EAST, 10, ForgeDirection.SOUTH, 3, 1, Block.planks.blockID);
+		set(level3.increment(ForgeDirection.WEST, 4).increment(ForgeDirection.SOUTH, 2), ForgeDirection.EAST, 13, ForgeDirection.SOUTH, 1, 1,
+				Block.planks.blockID);
+
+		final Vector3i level4 = level3.increment(ForgeDirection.UP).increment(ForgeDirection.NORTH).increment(ForgeDirection.WEST, 1);
+		set(level4, ForgeDirection.EAST, 8, ForgeDirection.SOUTH, 7, 1, Block.planks.blockID);
+		set(level4.increment(ForgeDirection.WEST, 2).increment(ForgeDirection.SOUTH), ForgeDirection.EAST, 12, ForgeDirection.SOUTH, 5, 1, Block.planks.blockID);
+		set(level4.increment(ForgeDirection.WEST, 3).increment(ForgeDirection.SOUTH, 2), ForgeDirection.EAST, 14, ForgeDirection.SOUTH, 3, 1,
+				Block.planks.blockID);
+		set(level4.increment(ForgeDirection.WEST, 6).increment(ForgeDirection.SOUTH, 3), ForgeDirection.EAST, 17, ForgeDirection.SOUTH, 1, 1,
+				Block.planks.blockID);
+
+		set(level4.increment(ForgeDirection.EAST, 1).increment(ForgeDirection.SOUTH, 1), ForgeDirection.EAST, 6, ForgeDirection.SOUTH, 5, 1, 0);
+		set(level4.increment(ForgeDirection.WEST, 1).increment(ForgeDirection.SOUTH, 2), ForgeDirection.EAST, 10, ForgeDirection.SOUTH, 3, 1, 0);
+
+		final Vector3i level5 = level4.increment(ForgeDirection.UP);
+
+		set(level5.increment(ForgeDirection.EAST, 5), ForgeDirection.EAST, 5, ForgeDirection.SOUTH, 7, 1, Block.planks.blockID);
+		set(level5.increment(ForgeDirection.EAST, 7).increment(ForgeDirection.SOUTH, 1), ForgeDirection.EAST, 4, ForgeDirection.SOUTH, 5, 1,
+				Block.planks.blockID);
+		set(level5.increment(ForgeDirection.EAST, 5).increment(ForgeDirection.SOUTH, 1), ForgeDirection.EAST, 4, ForgeDirection.SOUTH, 5, 1, 0);
+		set(level5.increment(ForgeDirection.EAST, 7).increment(ForgeDirection.SOUTH, 2), ForgeDirection.EAST, 3, ForgeDirection.SOUTH, 3, 1, 0);
+
+		set(level5, ForgeDirection.EAST, 1, ForgeDirection.SOUTH, 7, 1, Block.planks.blockID);
+		set(level5.increment(ForgeDirection.SOUTH, 1), ForgeDirection.EAST, 1, ForgeDirection.SOUTH, 5, 1, 0);
+
+		set(level5.increment(ForgeDirection.WEST, 2).increment(ForgeDirection.SOUTH), ForgeDirection.EAST, 2, ForgeDirection.SOUTH, 5, 1, Block.planks.blockID);
+		set(level5.increment(ForgeDirection.WEST, 2).increment(ForgeDirection.SOUTH, 2), ForgeDirection.EAST, 2, ForgeDirection.SOUTH, 3, 1, 0);
+
+		set(level5.increment(ForgeDirection.WEST, 3).increment(ForgeDirection.SOUTH, 2), ForgeDirection.EAST, 1, ForgeDirection.SOUTH, 3, 1,
+				Block.planks.blockID);
+		set(level5.increment(ForgeDirection.WEST, 3).increment(ForgeDirection.SOUTH, 3), ForgeDirection.EAST, 1, ForgeDirection.SOUTH, 1, 1, 0);
+		set(level5.increment(ForgeDirection.WEST, 8).increment(ForgeDirection.SOUTH, 3), ForgeDirection.EAST, 5, ForgeDirection.SOUTH, 1, 1,
+				Block.planks.blockID);
+
+		final Vector3i level6 = level5.increment(ForgeDirection.UP);
+
+		set(level6.increment(ForgeDirection.EAST, 6), ForgeDirection.EAST, 4, ForgeDirection.SOUTH, 7, 1, Block.planks.blockID);
+		set(level6.increment(ForgeDirection.EAST, 7).increment(ForgeDirection.SOUTH, 1), ForgeDirection.EAST, 4, ForgeDirection.SOUTH, 5, 1,
+				Block.planks.blockID);
+		set(level6.increment(ForgeDirection.EAST, 6).increment(ForgeDirection.SOUTH, 1), ForgeDirection.EAST, 3, ForgeDirection.SOUTH, 5, 1, 0);
+		set(level6.increment(ForgeDirection.EAST, 7).increment(ForgeDirection.SOUTH, 2), ForgeDirection.EAST, 4, ForgeDirection.SOUTH, 3, 1, 0);
+
+		final Vector3i level7 = level6.increment(ForgeDirection.UP);
+
+		set(level7.increment(ForgeDirection.EAST, 7), ForgeDirection.EAST, 3, ForgeDirection.SOUTH, 7, 1, Block.planks.blockID);
+		set(level7.increment(ForgeDirection.EAST, 7).increment(ForgeDirection.SOUTH, 1), ForgeDirection.EAST, 4, ForgeDirection.SOUTH, 5, 1,
+				Block.planks.blockID);
+		// set(level6.increment(ForgeDirection.EAST,
+		// 7).increment(ForgeDirection.SOUTH, 1), ForgeDirection.EAST, 2,
+		// ForgeDirection.SOUTH, 5, 1, 0);
+		// set(level6.increment(ForgeDirection.EAST,
+		// 7).increment(ForgeDirection.SOUTH, 2), ForgeDirection.EAST, 3,
+		// ForgeDirection.SOUTH, 3, 1, 0);
+
+		/*
+		 * set(level5.increment(ForgeDirection.EAST,
+		 * 7).increment(ForgeDirection.SOUTH, 2), ForgeDirection.EAST, 3,
+		 * ForgeDirection.SOUTH, 3, 1, Block.planks.blockID);
+		 * set(level5.increment(ForgeDirection.EAST,
+		 * 7).increment(ForgeDirection.SOUTH, 2), ForgeDirection.EAST, 2,
+		 * ForgeDirection.SOUTH, 3, 1, 0);
+		 * 
+		 * 
+		 * set(level5.increment(ForgeDirection.EAST,
+		 * 7).increment(ForgeDirection.SOUTH, 1).increment(ForgeDirection.UP,
+		 * 1), ForgeDirection.EAST, 3, ForgeDirection.SOUTH, 5, 1,
+		 * Block.planks.blockID);
+		 */
+
+		// set(level3.increment(ForgeDirection.EAST,
+		// 7).increment(ForgeDirection.SOUTH, 1).increment(ForgeDirection.UP),
+		// ForgeDirection.EAST, 1, ForgeDirection.SOUTH, 3, 1,
+		// Block.planks.blockID);
+
+		/*
+		 * set(level3, 0); set(level3.increment(ForgeDirection.EAST, 7), 0);
+		 * set(level3.increment(ForgeDirection.SOUTH, 4), 0);
+		 * set(level3.increment(ForgeDirection.EAST,
+		 * 7).increment(ForgeDirection.SOUTH, 4), 0);
+		 */}
+
 	protected void testClear(int sizeOfBreakerGrid) {
 		final int areaSize = Math.max(80, sizeOfBreakerGrid + 10);
 
@@ -278,27 +394,21 @@ public class TestCommand extends Command {
 		final Vector3i platformStart = this.playerLocation.increment(ForgeDirection.UP, 1).increment(ForgeDirection.EAST, 10)
 				.increment(ForgeDirection.SOUTH, 10);
 
-		set(platformStart, ForgeDirection.EAST, 0, ForgeDirection.SOUTH, sizeOfBreakerGrid, sizeOfBreakerGrid, Motive.BlockBreaker.blockID,
+		set(platformStart, ForgeDirection.EAST, 1, ForgeDirection.SOUTH, sizeOfBreakerGrid, sizeOfBreakerGrid, Motive.BlockBreaker.blockID,
 				ForgeDirection.EAST.ordinal());
 
-		final Vector3i fodderStartLocation = platformStart.increment(ForgeDirection.EAST, 5).increment(ForgeDirection.DOWN, 2)
-				.increment(ForgeDirection.NORTH, 2);
-		set(fodderStartLocation, ForgeDirection.EAST, 20, ForgeDirection.SOUTH, sizeOfBreakerGrid + 4, sizeOfBreakerGrid + 4, Block.blockDiamond.blockID);
+		set(platformStart.increment(ForgeDirection.EAST, 5).increment(ForgeDirection.DOWN, 2).increment(ForgeDirection.NORTH, 2), ForgeDirection.EAST, 20,
+				ForgeDirection.SOUTH, sizeOfBreakerGrid + 4, sizeOfBreakerGrid + 4, Block.blockDiamond.blockID);
 
 		final Vector3i engineLocation = platformStart.increment(ForgeDirection.WEST).increment(ForgeDirection.UP);
-		this.world.setBlock(engineLocation.x, engineLocation.y, engineLocation.z, Motive.BlockMover.blockID, 0, 3);
+		set(engineLocation, Motive.BlockMover.blockID);
 
 		final Vector3i powerLocation = engineLocation.increment(ForgeDirection.WEST);
-		this.world.setBlock(powerLocation.x, powerLocation.y, powerLocation.z, Block.blockRedstone.blockID, 0, 3);
+		set(powerLocation, Block.blockRedstone.blockID);
 
-		final Vector3i lampLocation = powerLocation.increment(ForgeDirection.UP);
-		this.world.setBlock(lampLocation.x, lampLocation.y, lampLocation.z, Block.redstoneLampActive.blockID, 0, 3);
-
-		final Vector3i chestLocation = engineLocation.increment(ForgeDirection.SOUTH, 2);
-		this.world.setBlock(chestLocation.x, chestLocation.y, chestLocation.z, Block.enderChest.blockID, 0, 3);
-
-		final Vector3i chest2Location = this.playerLocation.increment(ForgeDirection.SOUTH, 2);
-		this.world.setBlock(chest2Location.x, chest2Location.y, chest2Location.z, Block.enderChest.blockID, 0, 3);
+		set(powerLocation.increment(ForgeDirection.UP), Block.redstoneLampActive.blockID);
+		set(engineLocation.increment(ForgeDirection.SOUTH, 2), Block.enderChest.blockID);
+		set(this.playerLocation.increment(ForgeDirection.SOUTH, 2), Block.enderChest.blockID);
 
 		final TileEntityMover tileEntityMover = (TileEntityMover) this.world.getBlockTileEntity(engineLocation.x, engineLocation.y, engineLocation.z);
 		tileEntityMover.setLocked(true);

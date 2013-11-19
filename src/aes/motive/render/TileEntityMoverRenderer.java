@@ -1,12 +1,12 @@
 package aes.motive.render;
 
-import aes.base.TileEntitySpecialRendererBase;
-import aes.motive.render.model.ModelBase;
+import aes.base.TileEntityRendererBase;
+import aes.motive.render.model.ModelMotiveBase;
 import aes.motive.render.model.ModelMover;
 
-public class TileEntityMoverRenderer extends TileEntitySpecialRendererBase {
+public class TileEntityMoverRenderer extends TileEntityRendererBase {
 	@Override
-	protected ModelBase getModel() {
+	protected ModelMotiveBase getModel() {
 		return new ModelMover();
 	}
 

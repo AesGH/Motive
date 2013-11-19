@@ -1,4 +1,4 @@
-package aes.motive;
+package aes.motive.test;
 
 import net.minecraft.block.Block;
 

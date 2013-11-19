@@ -41,7 +41,6 @@ public class TileEntityMote extends TileEntityMoverBase {
 			Motive.log(this.worldObj, "Changing direction");
 			setCurrentDirection(getCurrentDirection().getRotation(ForgeDirection.UP));
 		}
-		setActive(true);
 	}
 
 	@Override

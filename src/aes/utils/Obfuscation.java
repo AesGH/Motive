@@ -10,11 +10,8 @@ import cpw.mods.fml.common.asm.transformers.deobf.FMLDeobfuscatingRemapper;
 
 public class Obfuscation {
 	static HashMap<String, String> classTranslations = new HashMap<String, String>();
-
 	static HashMap<String, String> methodTranslations = new HashMap<String, String>();
-
 	static HashMap<String, String> fieldTranslations = new HashMap<String, String>();
-
 	static HashMap<String, String> mcpToSrgTranslations = new HashMap<String, String>();
 
 	public static String getClassName(String name) {
@@ -72,6 +69,10 @@ public class Obfuscation {
 			mcpToSrgTranslations.put("renderTileEntityAt", "func_76894_a");
 			mcpToSrgTranslations.put("renderEntities", "func_72713_a");
 
+			mcpToSrgTranslations.put("renderEntity", "func_78720_a");
+			mcpToSrgTranslations.put("updateCameraAndRender", "func_78480_b");
+			mcpToSrgTranslations.put("updateRenderer", "func_78907_a");
+
 			mcpToSrgTranslations.put("blockX", "field_72311_b");
 			mcpToSrgTranslations.put("blockY", "field_72312_c");
 			mcpToSrgTranslations.put("blockZ", "field_72309_d");
@@ -83,6 +84,8 @@ public class Obfuscation {
 
 			mcpToSrgTranslations.put("worldRenderers", "field_72765_l");
 			mcpToSrgTranslations.put("playersInChunk", "field_73263_b");
+
+			mcpToSrgTranslations.put("glRenderList", "field_78942_y");
 
 			final Map<String, Map<String, String>> rawFieldMaps = (Map<String, Map<String, String>>) PrivateFieldAccess.getValue(
 					FMLDeobfuscatingRemapper.INSTANCE, "rawFieldMaps");

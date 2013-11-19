@@ -1,6 +1,7 @@
 package aes.motive.render.model;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -12,9 +13,8 @@ import aes.motive.Motive;
 import aes.motive.item.ItemMoverRemoteControl;
 import aes.motive.tileentity.TileEntityMover;
 import aes.utils.Vector3i;
-import cpw.mods.fml.client.FMLClientHandler;
 
-public class ModelMoverRemoteControl extends ModelBase {
+public class ModelMoverRemoteControl extends ModelMotiveBase {
 	private final ModelRenderer outline;
 	private final ModelRenderer arrow;
 
@@ -42,12 +42,13 @@ public class ModelMoverRemoteControl extends ModelBase {
 	}
 
 	private void drawCenteredString(String string, int colorRGB) {
+		final FontRenderer fontRenderer = getFontRenderer();
 		final float width = fontRenderer.getStringWidth(string);
 
 		if (width == 0)
 			return;
 
-		final float textWidth = 108f;
+		final float textWidth = 115f;
 
 		final float scale = Math.min(2f, textWidth / width);
 
@@ -68,53 +69,37 @@ public class ModelMoverRemoteControl extends ModelBase {
 	}
 
 	@Override
-	public void render(TileEntity tileEntity, ItemStack stack, float scale) {
-		super.render(tileEntity, stack, scale);
+	protected void renderModel(TileEntity tileEntity, ItemStack stack, float partialTickTime) {
+		texture(Motive.resourceRemoteControlTexture);
 
-		FMLClientHandler.instance().getClient().renderEngine.bindTexture(Motive.resourceRemoteControlTexture);
-		this.outline.render(scale);
+		// GL11.glDisable(GL11.GL_LIGHTING);
+
+		rotate(180, 1, 0, 0);
+		drawBoltedFace(true);
+
+		rotate(180, 1, 0, 0);
+
+		final float scale = 1f / 192f;
+
+		GL11.glScalef(scale, scale, scale);
+
+		// GL11.glEnable(GL11.GL_LIGHTING);
+
+		// this.outline.render(1f);
+
 		// this.arrow.render(scale);
 
 		final TileEntityMover tileEntityMoverPairedTo = ItemMoverRemoteControl.getPairedMover(Minecraft.getMinecraft().theWorld, stack);
 
-		final float fontScale = 0.06f;
-
 		GL11.glPushMatrix();
-		GL11.glScalef(fontScale, fontScale, fontScale);
-		GL11.glTranslatef(-31f, 77, -10f);
-		GL11.glDisable(GL11.GL_LIGHTING);
+		GL11.glTranslatef(68f, 37, 3f);
 
-		final String textColorBlack = (char) 167 + "0";
-		final String textColorBlue = (char) 167 + "1";
-		final String textColorGreen = (char) 167 + "2";
-		final String textColorCyan = (char) 167 + "3";
-		final String textColorRed = (char) 167 + "4";
-		final String textColorPurple = (char) 167 + "5";
-		final String textColorYellow = (char) 167 + "6";
-		final String textColorGrey = (char) 167 + "7";
+		final String titleStyle = this.textColorWhite + this.textStyleItalic;
+		final String shortcutStyle = this.textColorWhite;
+		final String actionStyle = this.textColorGrey;
 
-		final String textColorDarkGrey = (char) 167 + "8";
-		final String textColorLightBlue = (char) 167 + "9";
-		final String textColorLightGreen = (char) 167 + "a";
-		final String textColorLightCyan = (char) 167 + "b";
-		final String textColorLightRed = (char) 167 + "c";
-		final String textColorLightPurple = (char) 167 + "d";
-		final String textColorLightYellow = (char) 167 + "e";
-		final String textColorWhite = (char) 167 + "f";
-
-		final String textRandomCycling = (char) 167 + "k";
-		final String textStyleBold = (char) 167 + "l";
-		final String textStyleStrikethru = (char) 167 + "m";
-		final String textStyleUnderline = (char) 167 + "n";
-		final String textStyleItalic = (char) 167 + "o";
-		final String textStyleReset = (char) 167 + "r";
-
-		final String titleStyle = textColorWhite + textStyleItalic;
-		final String shortcutStyle = textColorWhite;
-		final String actionStyle = textColorGrey;
-
-		final String pairedStyle = textColorLightGreen + textStyleBold;
-		final String unpairedStyle = textColorLightRed + textStyleBold;
+		final String pairedStyle = this.textColorLightGreen + this.textStyleBold;
+		final String unpairedStyle = this.textColorLightRed + this.textStyleBold;
 
 		final String pairedIndicator = pairedStyle + "PAIRED";
 		final String unpairedIndicator = unpairedStyle + "NOT PAIRED";
@@ -122,19 +107,19 @@ public class ModelMoverRemoteControl extends ModelBase {
 		final String shortcutClick = shortcutStyle + "Click: ";
 		final String shortcutRightClick = shortcutStyle + "Right click: ";
 
-		final String actionPair = actionStyle + textColorLightGreen + "Pair";
-		final String actionUnpair = actionStyle + textColorLightRed + "Unpair";
-		final String actionChangePair = actionStyle + textColorGreen + "Change pair";
+		final String actionPair = actionStyle + this.textColorLightGreen + "Pair";
+		final String actionUnpair = actionStyle + this.textColorLightRed + "Unpair";
+		final String actionChangePair = actionStyle + this.textColorGreen + "Change pair";
 
-		final String actionDisconnect = actionStyle + textColorLightRed + "Disconnect";
-		final String actionConnect = actionStyle + textColorLightGreen + "Connect";
-		final String actionOpen = actionStyle + textColorLightCyan + "Open";
+		final String actionDisconnect = actionStyle + this.textColorLightRed + "Disconnect";
+		final String actionConnect = actionStyle + this.textColorLightGreen + "Connect";
+		final String actionOpen = actionStyle + this.textColorLightCyan + "Open";
 
-		final String unpairedTip = textColorLightGreen + "Use on " + Motive.BlockMover.getLocalizedName() + " to pair";
+		final String unpairedTip = this.textColorLightGreen + "Use on " + Motive.BlockMover.getLocalizedName() + " to pair";
 
-		fontRenderer.drawString(titleStyle + Motive.BlockMover.getLocalizedName() + " Remote", 0, 0, 0, false);
+		GL11.glTranslatef(-20f, -5f, 0);
 
-		GL11.glTranslatef(-20f, 14f, 0);
+		drawCenteredString(titleStyle + Motive.BlockMover.getLocalizedName() + " Remote");
 
 		final MovingObjectPosition objectMouseOver = Minecraft.getMinecraft().objectMouseOver;
 		final TileEntity tileEntityMouseOver = objectMouseOver == null ? null : Minecraft.getMinecraft().theWorld.getBlockTileEntity(objectMouseOver.blockX,
@@ -165,6 +150,5 @@ public class ModelMoverRemoteControl extends ModelBase {
 		}
 
 		GL11.glPopMatrix();
-		GL11.glEnable(GL11.GL_LIGHTING);
-	}
+	};
 }

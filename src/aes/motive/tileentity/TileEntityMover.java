@@ -13,6 +13,7 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 	private Vector3i powered;
 	private float speed;
 	private boolean highlight;
+	private float flashPct;
 	public MoverMode mode = MoverMode.AwayFromSignal;
 
 	static String[] commands = new String[] { "isActive", "isMoving", "move", "lock" };
@@ -238,6 +239,18 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 		return !getPowered().isEmpty();
 	}
 
+	@Override public void updateEntity() {
+		super.updateEntity();
+		if(flashPct != 0)
+		{
+			setFlashPct(flashPct - 8);
+			if(Math.abs(flashPct) < 10)
+			{
+				flashPct = 0;
+			}
+		}
+	};
+	
 	@Override
 	public void writeToNBT(NBTTagCompound nbtTagCompound) {
 		super.writeToNBT(nbtTagCompound);
@@ -245,5 +258,31 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 		nbtTagCompound.setBoolean("highlight", getHighlight());
 		nbtTagCompound.setInteger("mode", this.mode.ordinal());
 		nbtTagCompound.setFloat("speed", getSpeed());
+	}
+
+	public float getFlashPct() {
+		return flashPct;
+	}
+
+	public void flash() {
+		Motive.packetHandler.sendThisMethodToClient(worldObj, this);
+		if(worldObj.isRemote)
+		{		
+			setFlashPct(100f);
+		}
+	}
+	
+	public void setFlashPct(float flashPct) {
+		this.flashPct = flashPct;
+		markConnectedBlocksForRender();
+	}
+	
+	@Override
+	public boolean toggleConnectedBlock(Vector3i location) {
+		if(!getHighlight())
+		{
+			flash();			
+		}
+		return super.toggleConnectedBlock(location);
 	}
 }

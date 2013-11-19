@@ -15,6 +15,7 @@ import aes.motive.block.BlockMote;
 import aes.motive.block.BlockMover;
 import aes.motive.block.BlockVe;
 import aes.motive.item.ItemMoverRemoteControl;
+import aes.motive.test.TestCommand;
 import aes.motive.tileentity.TileEntityMover;
 import aes.motive.tileentity.TileEntityMoverBase;
 import cpw.mods.fml.common.FMLLog;
@@ -44,12 +45,12 @@ public class Motive {
 
 	public static final CreativeTabs CreativeTab = new CreativeTab();
 
+	// public static Block BlockTest;
 	public static Block BlockMote;
 	public static Block BlockVe;
-
 	public static Block BlockMover;
-
 	public static Block BlockBreaker;
+
 	public static Item ItemMoverRemoteControl;
 	public static ResourceLocation resourceMoverTexture = new ResourceLocation("motive", "textures/blocks/mover.png");
 	public static ResourceLocation resourceMoteTexture = new ResourceLocation("motive", "textures/blocks/mote.png");
@@ -57,8 +58,9 @@ public class Motive {
 	public static ResourceLocation resourceStrutTexture = new ResourceLocation("motive", "textures/blocks/strut.png");
 	public static ResourceLocation resourceGlassCaseTexture = new ResourceLocation("motive", "textures/blocks/glassCase.png");
 	public static ResourceLocation resourceFrontCaseTexture = new ResourceLocation("motive", "textures/blocks/veFrame.png");
-	public static ResourceLocation resourceBreakerTexture = new ResourceLocation("motive", "textures/blocks/breaker.png");
+	public static ResourceLocation resourceBreakerTexture = new ResourceLocation("motive", "textures/blocks/breakerFront.png");
 	public static ResourceLocation resourceRemoteControlTexture = new ResourceLocation("motive", "textures/items/moverRemoteIcon.png");
+	public static ResourceLocation resourceBoltedFrameTexture = new ResourceLocation("motive", "textures/blocks/boltedFrame.png");
 	public static ResourceLocation resourceMoverIconTexture = new ResourceLocation("motive", "textures/blocks/moverIcon.png");
 	public static PacketHandler packetHandler = new PacketHandler("Motive", TileEntityMover.class);
 
@@ -85,11 +87,13 @@ public class Motive {
 		TestCommand.name = config.get(Configuration.CATEGORY_GENERAL, "testCommandName", TestCommand.name, "Name of the command to be used for the testing.")
 				.getString();
 
-		BlockMover = new BlockMover(config.getBlock("BlockMover", 3388).getInt()).setUnlocalizedName("Mover");
-		BlockBreaker = new BlockBreaker(config.getBlock("BlockBreaker", 3389).getInt()).setUnlocalizedName("Breaker");
-		ItemMoverRemoteControl = new ItemMoverRemoteControl(config.getItem("MoverRemoteControl", 3390).getInt()).setUnlocalizedName("MoverRemoteControl");
+		BlockMover = new BlockMover(config.getBlock("BlockMover", 3388).getInt()).setUnlocalizedName("Motive Engine");
+		// BlockTest = new BlockTest(config.getBlock("BlockTest",
+		// 3393).getInt()).setUnlocalizedName("Motive Test");
+		BlockBreaker = new BlockBreaker(config.getBlock("BlockBreaker", 3389).getInt()).setUnlocalizedName("Motive Breaker");
+		ItemMoverRemoteControl = new ItemMoverRemoteControl(config.getItem("MoverRemoteControl", 3390).getInt()).setUnlocalizedName("Motive Engine Remote");
 		BlockMote = new BlockMote(config.getBlock("BlockMote", 3391).getInt()).setUnlocalizedName("Mote");
-		BlockVe = new BlockVe(config.getBlock("BlockVe", 3392).getInt()).setUnlocalizedName("Frame Section");
+		BlockVe = new BlockVe(config.getBlock("BlockVe", 3392).getInt()).setUnlocalizedName("Motive Frame");
 
 		ConnectedBlocks.MAX_BLOCKS_CAN_MOVE = config.get("Mover", "MaximumBlocksMovable", ConnectedBlocks.MAX_BLOCKS_CAN_MOVE).getInt();
 
