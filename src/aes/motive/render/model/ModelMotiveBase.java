@@ -101,83 +101,74 @@ public class ModelMotiveBase extends ModelBase {
 		draw();
 	}
 
-	protected void drawDiagonalStruts() {
-
-		GL11.glPushMatrix();
-		for(int i=0; i<4; i++)
-		{
-		drawDiagonalStrut();
-		rotate(90, 1, 0, 0);
-		}
-//		drawDiagonalStrut();
-		
-		GL11.glPopMatrix();
-		
-	}
-
 	protected void drawDiagonalStrut() {
 		startDrawing();
 
 		texture(Motive.resourceStrutTexture);
-		
+
 		setUVOffset(0, 0);
 		setVertexOffset(0, 0, 0);
 
 		final double strutSize = 3D;
-		
-		final double strutDistance = Math.sqrt(strutSize*strutSize+ strutSize*strutSize);
-		final double strutHeight = strutDistance*2;
-		
+
+		final double strutDistance = Math.sqrt(strutSize * strutSize + strutSize * strutSize);
+		final double strutHeight = strutDistance * 2;
+
 		final double inset = getNutHeight() + getFaceHeight();
 
-		addQuadWithUV(
-				new Vector3d(inset + strutDistance, inset, 128 - inset), 0, 0, 
-				new Vector3d(128 - inset, 128-inset - strutHeight, inset + strutDistance ), 88, 0, 
-				new Vector3d(128 - inset, 128-inset, inset + strutDistance), 88, 6, 
-				new Vector3d(inset + strutDistance, inset + strutHeight, 128 - inset), 0, 6);
+		addQuadWithUV(new Vector3d(inset + strutDistance, inset, 128 - inset), 0, 0,
+				new Vector3d(128 - inset, 128 - inset - strutHeight, inset + strutDistance), 88, 0, new Vector3d(128 - inset, 128 - inset, inset
+						+ strutDistance), 88, 6, new Vector3d(inset + strutDistance, inset + strutHeight, 128 - inset), 0, 6);
 
-		addQuadWithUV(
-				new Vector3d(inset, inset + strutHeight, 128 - inset - strutDistance), 0, 6,
-				new Vector3d(128 - inset - strutDistance, 128-inset, inset), 88, 6, 
-				new Vector3d(128 - inset - strutDistance, 128-inset - strutHeight, inset), 88, 0, 
-				new Vector3d(inset, inset, 128 - inset - strutDistance), 0, 0 
-				);
-		
-		addQuadWithUV(
-				new Vector3d(128 - inset, 128-inset - strutHeight, inset + strutDistance ), 88, 0,
-				new Vector3d(inset + strutDistance, inset, 128 - inset), 0, 0, 
-				new Vector3d(inset, inset, 128 - inset - strutDistance), 0, 0, 
-				new Vector3d(128 - inset - strutDistance, 128-inset - strutHeight, inset), 88, 0 
-				);
-		
-		addQuadWithUV(
-				new Vector3d(inset + strutDistance, inset + strutHeight, 128 - inset), 0, 6,
-				new Vector3d(128 - inset, 128-inset, inset + strutDistance), 88, 6, 
-				new Vector3d(128 - inset - strutDistance, 128-inset, inset), 88, 6, 
-				new Vector3d(inset, inset + strutHeight, 128 - inset - strutDistance), 0, 6
-				);
-		
+		addQuadWithUV(new Vector3d(inset, inset + strutHeight, 128 - inset - strutDistance), 0, 6,
+				new Vector3d(128 - inset - strutDistance, 128 - inset, inset), 88, 6, new Vector3d(128 - inset - strutDistance, 128 - inset - strutHeight,
+						inset), 88, 0, new Vector3d(inset, inset, 128 - inset - strutDistance), 0, 0);
 
-		
-		
-		
-/*		addQuadWithUV(
-				new Vector3d(inset + strutDistance, inset + strutHeight, 128 - inset), 0, 6,
-				new Vector3d(128 - inset - strutDistance, 128-inset, inset + strutDistance), 88, 6, 
-				new Vector3d(128 - inset - strutDistance, 128-inset - strutDistance, inset + strutDistance), 88, 0, 
-				new Vector3d(inset + strutDistance, inset, 128 - inset), 0, 0
-				);
-*/		
-/*		addQuadWithUV(new Vector3d(128 - inset, inset + strutHeight, 128 - inset), 0, 0, new Vector3d(128 - inset, inset + strutHeight, 128 - inset
-				- strutHeight), 0, 6, new Vector3d(inset, inset + strutHeight, 128 - inset - strutHeight), 88, 6, new Vector3d(inset, inset + strutHeight,
-				128 - inset), 88, 0);
-		addQuadWithUV(new Vector3d(inset, inset + strutHeight, 128 - inset - strutHeight), 0, 6, new Vector3d(128 - inset, inset + strutHeight, 128 - inset
-				- strutHeight), 88, 6, new Vector3d(128 - inset, inset, 128 - inset - strutHeight), 88, 0,
-				new Vector3d(inset, inset, 128 - inset - strutHeight), 0, 0);
-		addQuadWithUV(new Vector3d(inset, inset, 128 - inset), 88, 0, new Vector3d(inset, inset, 128 - inset - strutHeight), 88, 6, new Vector3d(128 - inset,
-				inset, 128 - inset - strutHeight), 0, 6, new Vector3d(128 - inset, inset, 128 - inset), 0, 0);
-*/
+		addQuadWithUV(new Vector3d(128 - inset, 128 - inset - strutHeight, inset + strutDistance), 88, 0, new Vector3d(inset + strutDistance, inset,
+				128 - inset), 0, 0, new Vector3d(inset, inset, 128 - inset - strutDistance), 0, 0, new Vector3d(128 - inset - strutDistance, 128 - inset
+				- strutHeight, inset), 88, 0);
+
+		addQuadWithUV(new Vector3d(inset + strutDistance, inset + strutHeight, 128 - inset), 0, 6,
+				new Vector3d(128 - inset, 128 - inset, inset + strutDistance), 88, 6, new Vector3d(128 - inset - strutDistance, 128 - inset, inset), 88, 6,
+				new Vector3d(inset, inset + strutHeight, 128 - inset - strutDistance), 0, 6);
+
+		/*
+		 * addQuadWithUV( new Vector3d(inset + strutDistance, inset +
+		 * strutHeight, 128 - inset), 0, 6, new Vector3d(128 - inset -
+		 * strutDistance, 128-inset, inset + strutDistance), 88, 6, new
+		 * Vector3d(128 - inset - strutDistance, 128-inset - strutDistance,
+		 * inset + strutDistance), 88, 0, new Vector3d(inset + strutDistance,
+		 * inset, 128 - inset), 0, 0 );
+		 */
+		/*
+		 * addQuadWithUV(new Vector3d(128 - inset, inset + strutHeight, 128 -
+		 * inset), 0, 0, new Vector3d(128 - inset, inset + strutHeight, 128 -
+		 * inset - strutHeight), 0, 6, new Vector3d(inset, inset + strutHeight,
+		 * 128 - inset - strutHeight), 88, 6, new Vector3d(inset, inset +
+		 * strutHeight, 128 - inset), 88, 0); addQuadWithUV(new Vector3d(inset,
+		 * inset + strutHeight, 128 - inset - strutHeight), 0, 6, new
+		 * Vector3d(128 - inset, inset + strutHeight, 128 - inset -
+		 * strutHeight), 88, 6, new Vector3d(128 - inset, inset, 128 - inset -
+		 * strutHeight), 88, 0, new Vector3d(inset, inset, 128 - inset -
+		 * strutHeight), 0, 0); addQuadWithUV(new Vector3d(inset, inset, 128 -
+		 * inset), 88, 0, new Vector3d(inset, inset, 128 - inset - strutHeight),
+		 * 88, 6, new Vector3d(128 - inset, inset, 128 - inset - strutHeight),
+		 * 0, 6, new Vector3d(128 - inset, inset, 128 - inset), 0, 0);
+		 */
 		draw();
+	}
+
+	protected void drawDiagonalStruts() {
+
+		GL11.glPushMatrix();
+		for (int i = 0; i < 4; i++) {
+			drawDiagonalStrut();
+			rotate(90, 1, 0, 0);
+		}
+		// drawDiagonalStrut();
+
+		GL11.glPopMatrix();
+
 	}
 
 	private void drawEdgeStrut() {

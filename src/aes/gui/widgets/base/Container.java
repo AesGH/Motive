@@ -57,7 +57,7 @@ public class Container {
 
 		if (scrollbar != null) {
 			scrollbar.setContainer(this);
-			this.scrollbarWidth = scrollbar.width;
+			this.scrollbarWidth = (int) scrollbar.width;
 		}
 	}
 
@@ -81,10 +81,10 @@ public class Container {
 		for (final Widget w : this.widgets) {
 			if (w instanceof Shiftable) {
 				if (w.y < minY) {
-					minY = w.y;
+					minY = (int) w.y;
 				}
 				if (w.y + w.height > maxY) {
-					maxY = w.y + w.height;
+					maxY = (int) (w.y + w.height);
 				}
 			}
 		}
@@ -111,7 +111,7 @@ public class Container {
 				final Widget cur = this.widgets.get(i);
 				if (cur instanceof Shiftable) {
 					if (offset == Integer.MAX_VALUE) {
-						offset = w.getY() - cur.getY();
+						offset = (int) (w.getY() - cur.getY());
 					}
 					((Shiftable) cur).shiftY(offset);
 				}
@@ -147,7 +147,10 @@ public class Container {
 		for (final Widget w : this.widgets) {
 			if (w.shouldRender(this.top, this.bottom)) {
 				w.draw(widgetX, widgetY);
-				overlays.addAll(w.getTooltips());
+				final Widget tooltip = w.getTooltip(mx, my);
+				if (tooltip != null) {
+					overlays.add(tooltip);
+				}
 			}
 		}
 
@@ -287,7 +290,7 @@ public class Container {
 		calculateContentHeight();
 		if (this.scrollbar != null) {
 			this.scrollbar.revalidate(this.top, this.bottom);
-			this.scrollbarWidth = this.scrollbar.width;
+			this.scrollbarWidth = (int) this.scrollbar.width;
 		}
 	}
 

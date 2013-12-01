@@ -25,7 +25,7 @@ public class ItemMoverRemoteControlRenderer extends TileEntityRendererBase {
 			renderAsItem(item, 0, 0, 0, 1f, 120, 0, 0);
 			return;
 		}
-		
+
 		super.renderItem(type, item, data);
 	}
 }

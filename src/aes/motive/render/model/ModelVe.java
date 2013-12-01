@@ -8,6 +8,6 @@ public class ModelVe extends ModelMotiveBase {
 	protected void renderModel(TileEntity tileEntity, ItemStack stack, float partialTickTime) {
 		rotate(180, 1, 0, 0);
 		drawBoltedFace(true);
-//		drawDiagonalStruts();
+		// drawDiagonalStruts();
 	};
 }

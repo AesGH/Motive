@@ -136,7 +136,7 @@ public class Transformer implements IClassTransformer {
 					ins.add(new VarInsnNode(ILOAD, 2));
 					ins.add(new VarInsnNode(ILOAD, 3));
 					ins.add(new VarInsnNode(ILOAD, 4));
-					ins.add(renderHookCall("modifyMovingTesselator", "(III)V"));
+					ins.add(renderHookCall("offsetMovingTesselator", "(III)V"));
 					methodNode.instructions.insertBefore(targetNode, ins);
 				}
 			}
@@ -217,7 +217,7 @@ public class Transformer implements IClassTransformer {
 			ins.add(getField("net/minecraft/util/MovingObjectPosition", "blockY", "I"));
 			ins.add(new VarInsnNode(ALOAD, 2));
 			ins.add(getField("net/minecraft/util/MovingObjectPosition", "blockZ", "I"));
-			ins.add(renderHookCall("modifyMovingTesselator", "(III)V"));
+			ins.add(renderHookCall("offsetMovingTesselator", "(III)V"));
 			methodNode.instructions.insertBefore(methodNode.instructions.getFirst(), ins);
 
 			ins = prepareForRenderHookCall();
@@ -238,6 +238,41 @@ public class Transformer implements IClassTransformer {
 			final InsnList ins = prepareForRenderHookCall();
 			ins.add(renderHookCall("updateWorldRendererTileEntities", "()V"));
 			methodNode.instructions.insertBefore(methodNode.instructions.getFirst(), ins);
+		}
+	}
+
+	public class TransformRenderGlobal_updateRenderers extends MethodTransformer {
+
+		public TransformRenderGlobal_updateRenderers() {
+			super("net.minecraft.client.renderer.RenderGlobal", "updateRenderers", "(Lnet/minecraft/entity/EntityLivingBase;Z)Z");
+		}
+
+		@Override
+		public void transform(ClassNode classNode, MethodNode methodNode) throws Exception {
+			AbstractInsnNode insertLocation = null;
+			LabelNode jumpTarget = null;
+			final ListIterator<AbstractInsnNode> iter = methodNode.instructions.iterator();
+			while (iter.hasNext()) {
+				AbstractInsnNode targetNode = iter.next();
+				if (targetNode.getOpcode() == Opcodes.IFNE) {
+					final JumpInsnNode jumpInsnNode = (JumpInsnNode) targetNode;
+					jumpTarget = jumpInsnNode.label;
+
+					insertLocation = targetNode.getNext();
+					break;
+				}
+			}
+
+			if (insertLocation == null)
+				throw new Exception("couldn't find first insert point");
+
+			final InsnList ins = prepareForRenderHookCall();
+			ins.add(new VarInsnNode(ALOAD, 10));
+			ins.add(renderHookCall("worldRendererContainsMovingBlocks", "(Lnet/minecraft/client/renderer/WorldRenderer;)Z"));
+			
+			ins.add(new JumpInsnNode(Opcodes.IFNE, jumpTarget));
+			
+			methodNode.instructions.insertBefore(insertLocation, ins);
 		}
 	}
 
@@ -326,7 +361,8 @@ public class Transformer implements IClassTransformer {
 			final InsnList ins = prepareForRenderHookCall();
 			ins.add(new VarInsnNode(ILOAD, 14));
 			ins.add(new VarInsnNode(ALOAD, 0));
-			ins.add(new FieldInsnNode(GETFIELD, "net/minecraft/client/renderer/WorldRenderer", "glRenderList", "I"));
+			ins.add(new FieldInsnNode(GETFIELD, Obfuscation.getClassName("net/minecraft/client/renderer/WorldRenderer"), Obfuscation.getFieldName(
+					"net/minecraft/client/renderer/WorldRenderer", "glRenderList", "I"), "I"));
 			ins.add(new VarInsnNode(ILOAD, 11));
 			ins.add(new VarInsnNode(ILOAD, 1));
 			ins.add(new VarInsnNode(ILOAD, 2));
@@ -350,7 +386,8 @@ public class Transformer implements IClassTransformer {
 				AbstractInsnNode targetNode = iter.next();
 				if (targetNode.getOpcode() == INVOKEVIRTUAL) {
 					final MethodInsnNode methodInsnNode = (MethodInsnNode) targetNode;
-					if (methodInsnNode.name.equals("renderBlockByRenderType")) {
+					if (methodInsnNode.name.equals(Obfuscation.getMethodName("net.minecraft.client.renderer.RenderBlocks", "renderBlockByRenderType",
+							"(Lnet/minecraft/block/Block;III)Z"))) {
 						while (iter.hasNext()) {
 							targetNode = iter.next();
 							if (targetNode.getOpcode() == ILOAD) {
@@ -410,6 +447,7 @@ public class Transformer implements IClassTransformer {
 			this.transforms.add(new TransformChunkCache());
 			this.transforms.add(new TransformRenderGlobal_drawSelectionBox());
 			this.transforms.add(new TransformRenderGlobal_renderEntities());
+			this.transforms.add(new TransformRenderGlobal_updateRenderers());
 			this.transforms.add(new TransformWorld());
 			this.transforms.add(new TransformBlock());
 
@@ -447,12 +485,11 @@ public class Transformer implements IClassTransformer {
 							MotiveCore.log("Transformed class " + transform.className + " method " + transform.methodName + ". Result " + result.length
 									+ " bytes.");
 
-							dumpMethod(bytes, methodNode);
-
-							MotiveCore.log("vvvvvvvvvvvvvvvvvvv");
-
-							dumpMethod(result, methodNode);
-
+							/*
+							 * dumpMethod(bytes, methodNode);
+							 * MotiveCore.log("vvvvvvvvvvvvvvvvvvv");
+							 * dumpMethod(result, methodNode);
+							 */
 							bytes = result;
 							break;
 						} catch (final Exception e) {

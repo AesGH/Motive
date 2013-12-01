@@ -9,6 +9,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockEndPortal;
 import net.minecraft.block.BlockPistonExtension;
 import net.minecraft.block.BlockPistonMoving;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.item.Item;
@@ -60,7 +61,7 @@ public class ItemTooltip extends Widget {
 		super(0, 0);
 
 		if (stack.itemID != 0) {
-			this.tooltips = stack.getTooltip(this.mc.thePlayer, this.mc.gameSettings.advancedItemTooltips);
+			this.tooltips = stack.getTooltip(Minecraft.getMinecraft().thePlayer, Minecraft.getMinecraft().gameSettings.advancedItemTooltips);
 			if (!this.tooltips.isEmpty()) {
 				String name = this.tooltips.get(0);
 				if (name.startsWith("tile.null.name")) {
@@ -72,10 +73,10 @@ public class ItemTooltip extends Widget {
 				}
 			}
 			final FontRenderer itemRenderer = stack.getItem().getFontRenderer(stack);
-			this.font = itemRenderer == null ? this.mc.fontRenderer : itemRenderer;
+			this.font = itemRenderer == null ? fontRenderer : itemRenderer;
 		} else {
 			this.tooltips = Arrays.asList("Air");
-			this.font = this.mc.fontRenderer;
+			this.font = fontRenderer;
 		}
 		this.parent = parent;
 		this.width = getMaxStringWidth();
@@ -108,7 +109,7 @@ public class ItemTooltip extends Widget {
 			drawGradientRect(this.x - 3, this.y - 3, this.x + this.width + 3, this.y - 3 + 1, gradient1, gradient1);
 			drawGradientRect(this.x - 3, this.y + this.height + 2, this.x + this.width + 3, this.y + this.height + 3, gradient2, gradient2);
 			for (int index = 0; index < this.tooltips.size(); ++index) {
-				this.font.drawStringWithShadow(this.tooltips.get(index), this.x, this.y, -1);
+				this.font.drawStringWithShadow(this.tooltips.get(index), (int) this.x, (int) this.y, -1);
 				if (index == 0) {
 					this.y += 2;
 				}
@@ -130,7 +131,7 @@ public class ItemTooltip extends Widget {
 	}
 
 	@Override
-	public void setPosition(int newX, int newY) {
+	public void setPosition(float newX, float newY) {
 		this.x = newX + 12;
 		this.y = newY - 12;
 		if (this.x + this.width + 6 > this.parent.width) {

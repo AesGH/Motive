@@ -15,31 +15,6 @@ import org.lwjgl.opengl.GL11;
 import aes.utils.Vector3d;
 
 public class ModelBase extends net.minecraft.client.model.ModelBase {
-	final String textColorBlack = (char) 167 + "0";
-
-	final String textColorBlue = (char) 167 + "1";
-	final String textColorGreen = (char) 167 + "2";
-	final String textColorCyan = (char) 167 + "3";
-	final String textColorRed = (char) 167 + "4";
-	final String textColorPurple = (char) 167 + "5";
-	final String textColorYellow = (char) 167 + "6";
-	final String textColorGrey = (char) 167 + "7";
-	final String textColorDarkGrey = (char) 167 + "8";
-
-	final String textColorLightBlue = (char) 167 + "9";
-	final String textColorLightGreen = (char) 167 + "a";
-	final String textColorLightCyan = (char) 167 + "b";
-	final String textColorLightRed = (char) 167 + "c";
-	final String textColorLightPurple = (char) 167 + "d";
-	final String textColorLightYellow = (char) 167 + "e";
-	final String textColorWhite = (char) 167 + "f";
-	final String textRandomCycling = (char) 167 + "k";
-
-	final String textStyleBold = (char) 167 + "l";
-	final String textStyleStrikethru = (char) 167 + "m";
-	final String textStyleUnderline = (char) 167 + "n";
-	final String textStyleItalic = (char) 167 + "o";
-	final String textStyleReset = (char) 167 + "r";
 	protected Tessellator tessellator;
 	private double xOffset;
 	private double yOffset;
@@ -98,7 +73,20 @@ public class ModelBase extends net.minecraft.client.model.ModelBase {
 		this.tessellator = Tessellator.instance;
 		GL11.glScalef(scale, scale, scale);
 
-		renderModel(tileEntity, stack, partialTickTime);
+		/*
+		 * // this.displayList = -1; if (++count > 100 && ( this instanceof
+		 * ModelMote || this instanceof ModelVe || this instanceof
+		 * ModelMoverRemoteControl || this instanceof ModelMover || this
+		 * instanceof ModelBreaker)) { // Motive.log("rendering " +
+		 * this.getClass().getName()); if (this.displayList == -1) {
+		 * Motive.log("generating call list"); this.displayList =
+		 * GLAllocation.generateDisplayLists(1);
+		 * GL11.glNewList(this.displayList, GL11.GL_COMPILE);
+		 * renderModel(tileEntity, stack, partialTickTime); GL11.glEndList();
+		 * Motive.log("generated call list"); } // Motive.log("calling list");
+		 * GL11.glCallList(this.displayList); // Motive.log("called list"); }
+		 * else
+		 */renderModel(tileEntity, stack, partialTickTime);
 
 		if (GuiScreen.isShiftKeyDown()) {
 			GL11.glDisable(GL11.GL_TEXTURE_2D);

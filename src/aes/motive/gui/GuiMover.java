@@ -1,110 +1,123 @@
 package aes.motive.gui;
 
+import java.util.Arrays;
+
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
-import aes.gui.core.BasicScreen;
 import aes.gui.widgets.ButtonVanilla;
 import aes.gui.widgets.Label;
+import aes.gui.widgets.MultiTooltip;
 import aes.gui.widgets.SliderVanilla;
+import aes.gui.widgets.Tooltip;
 import aes.gui.widgets.base.Button.ButtonHandler;
 import aes.gui.widgets.base.Container;
 import aes.gui.widgets.base.Slider;
 import aes.gui.widgets.base.Slider.ValueChangedHandler;
 import aes.gui.widgets.base.Widget;
+import aes.motive.FontUtils;
+import aes.motive.Motive;
 import aes.motive.tileentity.MoverMode;
 import aes.motive.tileentity.TileEntityMover;
 import aes.motive.tileentity.TileEntityMoverBase;
+import aes.utils.Vector3i;
 
-public class GuiMover extends BasicScreen {
-	TileEntityMover tileEntity;
+public class GuiMover extends GuiDialog {
+	private final World world;
+	private final String tileEntityUid;
+
 	private Container container;
-	private int xSize;
-	private int ySize;
-	private int xPos;
-	private int yPos;
+
 	private ButtonVanilla buttonActive;
+	private ButtonVanilla buttonMode;;
+	private ButtonVanilla buttonMoving;
+	private ButtonVanilla buttonHighlight;
 	private SliderVanilla sliderSpeed;
+	private Label textStatus;
+	private Label textStatusDetail;
 
 	final int margin = 10;
-
-	final int gap = 5;;
-
-	private ButtonVanilla buttonMode;;
-
-	private ButtonVanilla buttonMoving;
-
-	private Label textStatus;
-	private final String uid;
-	private final World world;
-	private Label textStatusDetail;
-	private ButtonVanilla buttonHighlight;;
+	final int gap = 5;
+	private Label textMoverPrompt;
+	private Label textConnectedPrompt;
+	private Label textStatusPrompt;
+	private int statusAreaYStart;
+	private int statusAreaYEnd;
 
 	public GuiMover(TileEntityMover tileEntity) {
-		super(null);
-		this.tileEntity = tileEntity;
-		this.uid = tileEntity.getUid();
+		super();
 		this.world = tileEntity.worldObj;
+		this.tileEntityUid = tileEntity.getUid();
 	}
 
 	@Override
 	protected void createGui() {
-		this.container = new Container();
+		Motive.log(this.world, "Creating Mover gui");
 
-		this.buttonActive = new ButtonVanilla(this.xSize - 2 * this.margin, 20, "Activated", new ButtonHandler() {
+		this.textMoverPrompt = new Label(Motive.BlockMover.getLocalizedName(), false);
+		this.textConnectedPrompt = new Label("Moving", false);
+		this.textStatusPrompt = new Label("Status", false);
+
+		this.buttonActive = new ButtonVanilla("Activated", new ButtonHandler() {
 			@Override
 			public void buttonClicked(Widget widget, int button) {
-				GuiMover.this.tileEntity.clientChangedProperty("active", GuiMover.this.tileEntity.getActive() ? "false" : "true");
+				getTileEntity().clientChangedProperty("active", getTileEntity().getActive() ? "false" : "true");
 			}
 		});
 
-		final float speedValue = this.tileEntity.getSpeed();
-
-		this.buttonMoving = new ButtonVanilla(this.xSize - 2 * this.margin, 20, "Connected", new ButtonHandler() {
+		this.buttonMoving = new ButtonVanilla("Connected", new ButtonHandler() {
 			@Override
 			public void buttonClicked(Widget widget, int button) {
-				GuiMover.this.tileEntity.clientChangedProperty("locked", GuiMover.this.tileEntity.getLocked() ? "false" : "true");
+				getTileEntity().clientChangedProperty("locked", getTileEntity().getLocked() ? "false" : "true");
 			}
 		});
 
-		this.buttonHighlight = new ButtonVanilla(this.xSize - 2 * this.margin, 20, "Highlight", new ButtonHandler() {
+		this.buttonHighlight = new ButtonVanilla("Highlight", new ButtonHandler() {
 			@Override
 			public void buttonClicked(Widget widget, int button) {
-				GuiMover.this.tileEntity.clientChangedProperty("highlight", GuiMover.this.tileEntity.getHighlight() ? "false" : "true");
+				getTileEntity().clientChangedProperty("highlight", getTileEntity().getHighlight() ? "false" : "true");
 			}
 		});
 
-		this.sliderSpeed = new SliderVanilla(this.xSize - 2 * this.margin, 20, speedValue, new Slider.SliderFormat() {
+		this.sliderSpeed = new SliderVanilla(this.xSize - 2 * this.margin, 20, 0, new Slider.SliderFormat() {
 			@Override
 			public String format(Slider slider) {
 				final float value = slider.getValue();
-				if (value < 0.25f)
-					return "Speed: SLOW";
-				if (value < 0.50f)
-					return "Speed: WALKING";
-				if (value < 0.75f)
-					return "Speed: SPRINTING";
-				return "Speed: STUPID FAST";
+				if (value < 0.2f)
+					return "Crawling";
+				if (value < 0.4f)
+					return "Walking";
+				if (value < 0.6f)
+					return "Running";
+				if (value < 0.8f)
+					return "Flying";
+				return "STUPID FAST";
 			}
 		}, new ValueChangedHandler() {
 			@Override
 			public void valueChanged(Slider slider) {
-				GuiMover.this.tileEntity.clientChangedProperty("speed", ((Object) slider.getValue()).toString());
+				getTileEntity().setSpeed(slider.getValue());
+				getTileEntity().clientChangedProperty("speed", ((Object) slider.getValue()).toString());
 			}
 		});
 
-		this.buttonMode = new ButtonVanilla(this.xSize - 2 * this.margin, 20, "Mode", new ButtonHandler() {
+		this.buttonMode = new ButtonVanilla("", new ButtonHandler() {
 			@Override
 			public void buttonClicked(Widget widget, int button) {
-				GuiMover.this.tileEntity.clientChangedProperty("mode", ((Object) ((GuiMover.this.tileEntity.mode.ordinal() + (button == 0 ? -1 : 1) + MoverMode
-						.values().length) % MoverMode.values().length)).toString());
+				getTileEntity().clientChangedProperty(
+						"mode",
+						((Object) ((getTileEntity().mode.ordinal() + (button == 0 ? -1 : 1) + MoverMode.values().length) % MoverMode.values().length))
+								.toString());
 			}
 		});
 
-		this.textStatus = new Label("Status: " + this.tileEntity.getStatus());
-		this.textStatusDetail = new Label("Status: " + this.tileEntity.getStatusDetail());
+		this.textStatus = new Label("", 0xfff0f0f0, 0xffffffff, false);
+		this.textStatusDetail = new Label("", 0xfff0f0f0, 0xffffffff, false);
+		this.textStatus.setShadowedText(true);
+		this.textStatusDetail.setShadowedText(true);
 
-		this.container.addWidgets(this.buttonActive, this.buttonMoving, this.buttonHighlight, this.sliderSpeed, this.buttonMode, this.textStatus,
-				this.textStatusDetail);
+		this.container = new Container();
+		this.container.addWidgets(this.textMoverPrompt, this.textConnectedPrompt, this.textStatusPrompt, this.buttonActive, this.buttonMoving,
+				this.buttonHighlight, this.sliderSpeed, this.buttonMode, this.textStatus, this.textStatusDetail);
 
 		this.containers.add(this.container);
 		this.selectedContainer = this.container;
@@ -112,90 +125,129 @@ public class GuiMover extends BasicScreen {
 	}
 
 	@Override
-	public boolean doesGuiPauseGame() {
-		return false;
-	}
-
-	@Override
 	public void drawBackground() {
 		super.drawBackground();
-		drawGradientRect(0, 0, this.width, this.height, -1072689136, -804253680);
+		Resources.inset.draw(this.container.left() + this.margin, this.statusAreaYStart, this.zLevel, this.xSize - 2 * this.margin, this.statusAreaYEnd
+				- this.statusAreaYStart);
+	}
 
-		this.mc.renderEngine.bindTexture(new ResourceLocation("motive", "textures/gui/mover.png"));
-		drawTexturedModalRect(this.xPos, this.yPos, 0, 0, this.xSize, this.ySize);
-		update();
+	TileEntityMover getTileEntity() {
+		final TileEntityMoverBase tileEntityMover = TileEntityMoverBase.getMover(this.world, this.tileEntityUid);
+		return tileEntityMover instanceof TileEntityMover ? (TileEntityMover) tileEntityMover : null;
 	}
 
 	@Override
 	public void initGui() {
-		this.xSize = 176;
-		this.ySize = 166;
-		this.xPos = (this.width - this.xSize) / 2;
-		this.yPos = (this.height - this.ySize) / 2;
-
-		super.initGui();
-
+		super.initGui(276, 146);
 	}
 
-	@Override
-	public void keyTyped(char par1, int par2) {
-		if (par1 == 27 && par2 == 1) {
-			close();
-			return;
+	private int positionAtColumn(Widget widget, int y, int columIndex, int ofColumns) {
+		return positionAtColumn(widget, y, columIndex, ofColumns, 1);
+	};
+
+	private int positionAtColumn(Widget widget, int y, int columIndex, int ofColumns, int colSpan) {
+		final int totalWidth = this.xSize - 2 * this.margin;
+		int widgetWidth = (int) ((totalWidth + (double) this.gap) / ofColumns - this.gap);
+		final int leftMargin = this.container.left() + this.margin;
+
+		final int x = (int) Math.ceil((columIndex - 1) * (widgetWidth + this.gap));
+		final boolean last = columIndex + colSpan - 1 == ofColumns;
+
+		if (last) {
+			widgetWidth = totalWidth - x;
+		} else {
+			widgetWidth = (widgetWidth + this.gap) * colSpan - this.gap;
 		}
-		super.keyTyped(par1, par2);
-	}
+		widget.setPosition(leftMargin + x, y, widgetWidth, widget.getHeight() == 0 ? 20 : widget.getHeight());
 
-	@Override
-	protected void reopenedGui() {
-
+		if (last)
+			return (int) widget.getHeight() + this.gap;
+		return 0;
 	}
 
 	@Override
 	protected void revalidateGui() {
+		super.revalidateGui();
+
+		Motive.log(this.world, "Resizing Mover gui");
 		this.container.revalidate(this.xPos, this.yPos, this.xSize, this.ySize);
-		final int leftMargin = this.container.left() + this.margin;
+
 		int yLocation = this.container.top() + this.margin;
-		this.buttonActive.setPosition(leftMargin, yLocation);
-		yLocation += this.buttonActive.getHeight() + this.gap;
-		this.buttonMoving.setPosition(leftMargin, yLocation);
-		yLocation += this.buttonMoving.getHeight() + this.gap;
-		this.buttonHighlight.setPosition(leftMargin, yLocation);
-		yLocation += this.buttonHighlight.getHeight() + this.gap;
-		this.sliderSpeed.setPosition(this.buttonActive.getX(), yLocation);
-		yLocation += this.sliderSpeed.getHeight() + this.gap;
 
-		this.buttonMode.setPosition(leftMargin, yLocation);
-		yLocation += this.buttonMode.getHeight() + this.gap;
+		yLocation += positionAtColumn(this.textMoverPrompt, yLocation, 1, 1) - this.gap / 2;
+		yLocation += positionAtColumn(this.buttonActive, yLocation, 1, 8, 2);
+		yLocation += positionAtColumn(this.sliderSpeed, yLocation, 3, 8, 5);
+		yLocation += positionAtColumn(this.buttonMode, yLocation, 8, 8, 1);
 
-		this.textStatus.setPosition(this.xPos + this.xSize / 2, yLocation);
+		// yLocation += this.gap;
+		yLocation += positionAtColumn(this.textConnectedPrompt, yLocation, 1, 1) - this.gap / 2;
+		yLocation += positionAtColumn(this.buttonMoving, yLocation, 1, 3, 2);
+		yLocation += positionAtColumn(this.buttonHighlight, yLocation, 3, 3);
 
-		yLocation += this.textStatus.getHeight() + this.gap;
+		// yLocation += this.gap;
+		yLocation += positionAtColumn(this.textStatusPrompt, yLocation, 1, 1) - this.gap / 2;
 
-		this.textStatusDetail.setPosition(this.xPos + this.xSize / 2, yLocation);
+		this.statusAreaYStart = yLocation;
+		yLocation += positionAtColumn(this.textStatus, yLocation, 1, 1);
+		yLocation += positionAtColumn(this.textStatusDetail, yLocation, 1, 1);
+
+		this.textStatus.setPosition(this.textStatus.getX() + 4, this.textStatus.getY() + 4);
+		this.textStatusDetail.setPosition(this.textStatusDetail.getX() + 4, this.textStatusDetail.getY());
+
+		this.statusAreaYEnd = yLocation;
 	}
 
-	private void update() {
-		final TileEntityMoverBase tileEntityMover = TileEntityMoverBase.getMover(this.world, this.uid);
-		if (tileEntityMover instanceof TileEntityMover) {
-			this.tileEntity = (TileEntityMover) tileEntityMover;
+	@Override
+	protected void update() {
+		final TileEntityMover tileEntity = getTileEntity();
+		if (tileEntity == null) {
+			close();
+			return;
 		}
-		this.buttonActive.setText(this.tileEntity.getActive() ? "Activated: \247aON" : "Activated: \247cOFF");
-		this.buttonMoving
-				.setText(this.tileEntity.getLocked() ? "Moving: " + (this.tileEntity.getLockedCount() - 1) + " connected blocks" : "Moving: Just self");
-		this.buttonHighlight.setText(this.tileEntity.getHighlight() ? "Highlight blocks: \247aON" : "Highlight blocks: \247cOFF");
-		switch (this.tileEntity.mode) {
+		this.buttonActive.setText(tileEntity.getActive() ? "Active" : "Inactive");
+		this.buttonMoving.setText(tileEntity.getLocked() ? tileEntity.getLockedCount() - 1 + " connected blocks" : "Just moving self");
+		this.buttonHighlight.setText(tileEntity.getHighlight() ? "Highlight" : "No highlight");
+		this.sliderSpeed.setValue(getTileEntity().getSpeed());
+		switch (tileEntity.mode) {
 		case TowardsSignal:
-			this.buttonMode.setText("Mode: Towards signals");
+			// this.buttonMode.setText("Moving towards signals");
+			this.buttonMode.setTooltip(new Tooltip("Towards redstone signals"));
+			this.buttonMode.setImage(new ResourceLocation("motive", "textures/gui/modes.png"), 10, 7, 0, 25, 10, 7, false);
+			break;
+		case Remote:
+			// this.buttonMode.setText("Moving towards signals");
+			this.buttonMode.setTooltip(new Tooltip("Move with " + Motive.ItemMoverRemoteControl.getStatName()));
+			this.buttonMode.setImage(new ResourceLocation("motive", "textures/gui/modes.png"), 10, 10, 21, 18, 10, 10, false);
 			break;
 		case AwayFromSignal:
-			this.buttonMode.setText("Mode: Away from signals");
+			// this.buttonMode.setText("Moving away from signals");
+			this.buttonMode.setTooltip(new Tooltip("Away from redstone signals"));
+			this.buttonMode.setImage(new ResourceLocation("motive", "textures/gui/modes.png"), 10, 7, 0, 18, 10, 7, false);
 			break;
 		case ComputerControlled:
-			this.buttonMode.setText("Mode: ComputerCraft peripheral");
+			// this.buttonMode.setText("ComputerCraft peripheral");
+			this.buttonMode.setTooltip(new MultiTooltip(Arrays.asList("ComputerCraft peripheral", FontUtils.textColorGrey + " " + TileEntityMover.usageMove,
+					FontUtils.textColorGrey + " " + TileEntityMover.usageIsActive, FontUtils.textColorGrey + " " + TileEntityMover.usageIsMoving,
+					FontUtils.textColorGrey + " " + TileEntityMover.usageLock, FontUtils.textColorGrey + " " + TileEntityMover.usageUnlock)));
+			this.buttonMode.setImage(new ResourceLocation("motive", "textures/gui/modes.png"), 10, 10, 11, 18, 10, 10, false);
 			break;
 		}
-		this.textStatus.setText(this.tileEntity.getStatus());
-		this.textStatusDetail.setText(this.tileEntity.getStatusDetail());
+		if (tileEntity.getStatus().isEmpty()) {
+			String status = "";
+			if (!tileEntity.getActive()) {
+				status += "Inactive, ";
+			}
+			final Vector3i signals = tileEntity.getSignals();
+			if (signals.isEmpty()) {
+				status += "No signal";
+			} else {
+				status += "Signal from " + signals.getDirection();
+			}
+			this.textStatus.setText(status);
+			this.textStatusDetail.setText("");
+		} else {
+			this.textStatus.setText(tileEntity.getStatus());
+			this.textStatusDetail.setText(tileEntity.getStatusDetail());
+		}
 	}
 }

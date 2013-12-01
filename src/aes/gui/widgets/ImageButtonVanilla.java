@@ -1,5 +1,6 @@
 package aes.gui.widgets;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;
 
 import org.lwjgl.opengl.GL11;
@@ -29,23 +30,25 @@ public class ImageButtonVanilla extends ImageButton {
 
 		final int u = 0;
 		int v;
-		this.mc.renderEngine.bindTexture(TEXTURE);
+		Minecraft.getMinecraft().renderEngine.bindTexture(TEXTURE);
 		v = 46 + getStateOffset(hover);
 
 		if (this.width == 200 && this.height == 20) {
-			drawTexturedModalRect(this.x, this.y, u, v, this.width, this.height);
+			drawTexturedModalRect((int) this.x, (int) this.y, u, v, (int) this.width, (int) this.height);
 		} else {
-			drawTexturedModalRect(this.x, this.y, u, v, this.width / 2, this.height / 2);
-			drawTexturedModalRect(this.x + this.width / 2, this.y, u + 200 - this.width / 2, v, this.width / 2, this.height / 2);
-			drawTexturedModalRect(this.x, this.y + this.height / 2, u, v + 20 - this.height / 2, this.width / 2, this.height / 2);
-			drawTexturedModalRect(this.x + this.width / 2, this.y + this.height / 2, u + 200 - this.width / 2, v + 20 - this.height / 2, this.width / 2,
-					this.height / 2);
+			drawTexturedModalRect((int) this.x, (int) this.y, u, v, (int) this.width / 2, (int) this.height / 2);
+			drawTexturedModalRect((int) this.x + (int) this.width / 2, (int) this.y, u + 200 - (int) this.width / 2, v, (int) this.width / 2,
+					(int) this.height / 2);
+			drawTexturedModalRect((int) this.x, (int) this.y + (int) this.height / 2, u, v + 20 - (int) this.height / 2, (int) this.width / 2,
+					(int) this.height / 2);
+			drawTexturedModalRect((int) this.x + (int) this.width / 2, (int) this.y + (int) this.height / 2, u + 200 - (int) this.width / 2, v + 20
+					- (int) this.height / 2, (int) this.width / 2, (int) this.height / 2);
 		}
 
-		this.mc.renderEngine.bindTexture(this.imageTexture);
+		Minecraft.getMinecraft().renderEngine.bindTexture(this.imageTexture);
 
-		drawTexturedModalRect(this.x + (this.width - this.imageWidth) / 2, this.y + (this.height - this.imageHeight) / 2, this.imageU, this.imageV,
-				this.imageWidth, this.imageHeight);
+		drawTexturedModalRect((int) this.x + ((int) this.width - this.imageWidth) / 2, (int) this.y + ((int) this.height - this.imageHeight) / 2, this.imageU,
+				this.imageV, this.imageWidth, this.imageHeight);
 
 		// drawCenteredString(mc.fontRenderer, str, x + width / 2, y + (height -
 		// 8) / 2, getTextColor(hover));
@@ -62,7 +65,7 @@ public class ImageButtonVanilla extends ImageButton {
 
 	@Override
 	public void handleClick(int mx, int my, int button) {
-		this.mc.sndManager.playSoundFX("random.click", 1.0F, 1.0F);
+		Minecraft.getMinecraft().sndManager.playSoundFX("random.click", 1.0F, 1.0F);
 		super.handleClick(mx, my, button);
 	}
 

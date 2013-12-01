@@ -125,6 +125,10 @@ public class PacketHandler implements IConnectionHandler, IPacketHandler {
 		return null;
 	}
 
+	public void leftClickedOpenSpaceWithItem(EntityPlayer player) {
+		sendPlayerUsedRemote(player.inventory.currentItem, player.worldObj.provider.dimensionId, 0, 0, 0);
+	}
+
 	public void onPacket(World world, EntityPlayer player, Packet250CustomPayload packet, DataInputStream inputStream) {
 		try {
 			final String command = inputStream.readUTF();

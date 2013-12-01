@@ -75,7 +75,7 @@ public class FocusableLabel extends FocusableWidget implements Shiftable {
 		if (this.focused) {
 			drawRect(this.x, this.y, this.x + this.width, this.y + this.height, 0x99999999);
 		}
-		this.mc.fontRenderer.drawStringWithShadow(this.str, this.x, this.y + 2, this.focused ? this.focusColor : this.hover ? this.hoverColor : this.color);
+		fontRenderer.drawStringWithShadow(this.str, (int) this.x, (int) this.y + 2, this.focused ? this.focusColor : this.hover ? this.hoverColor : this.color);
 	}
 
 	@Override
@@ -90,11 +90,6 @@ public class FocusableLabel extends FocusableWidget implements Shiftable {
 
 	public String getText() {
 		return this.str;
-	}
-
-	@Override
-	public List<Widget> getTooltips() {
-		return this.hover ? this.tooltips : super.getTooltips();
 	}
 
 	public Object getUserData() {
@@ -120,7 +115,7 @@ public class FocusableLabel extends FocusableWidget implements Shiftable {
 	}
 
 	@Override
-	public void setPosition(int x, int y) {
+	public void setPosition(float x, float y) {
 		this.x = this.center ? x - this.width / 2 : x;
 		this.y = y;
 	}

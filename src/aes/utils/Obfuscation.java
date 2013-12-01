@@ -72,6 +72,7 @@ public class Obfuscation {
 			mcpToSrgTranslations.put("renderEntity", "func_78720_a");
 			mcpToSrgTranslations.put("updateCameraAndRender", "func_78480_b");
 			mcpToSrgTranslations.put("updateRenderer", "func_78907_a");
+			mcpToSrgTranslations.put("updateRenderers", "func_72716_a");
 
 			mcpToSrgTranslations.put("blockX", "field_72311_b");
 			mcpToSrgTranslations.put("blockY", "field_72312_c");
@@ -85,7 +86,14 @@ public class Obfuscation {
 			mcpToSrgTranslations.put("worldRenderers", "field_72765_l");
 			mcpToSrgTranslations.put("playersInChunk", "field_73263_b");
 
+			mcpToSrgTranslations.put("worldRenderersToUpdate", "field_72767_j");
+			mcpToSrgTranslations.put("renderChunksTall", "field_72763_n");
+			mcpToSrgTranslations.put("renderChunksDeep", "field_72764_o");
+			mcpToSrgTranslations.put("worldRenderers", "field_72765_l");
+			mcpToSrgTranslations.put("renderChunksWide", "field_72766_m");
+
 			mcpToSrgTranslations.put("glRenderList", "field_78942_y");
+			mcpToSrgTranslations.put("timer", "field_71428_T");
 
 			final Map<String, Map<String, String>> rawFieldMaps = (Map<String, Map<String, String>>) PrivateFieldAccess.getValue(
 					FMLDeobfuscatingRemapper.INSTANCE, "rawFieldMaps");

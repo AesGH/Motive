@@ -51,7 +51,7 @@ public class TileEntityBase extends TileEntity {
 	};
 
 	protected void updateBlock() {
-		if (this.worldObj == null)
+		if (this.worldObj == null || this.worldObj.isRemote)
 			return;
 		Motive.log(this.worldObj, "updateBlock " + getLocation() + " at tick " + this.worldObj.getWorldTime());
 		this.worldObj.markBlockForUpdate(this.xCoord, this.yCoord, this.zCoord);

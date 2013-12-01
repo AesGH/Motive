@@ -1,6 +1,6 @@
 package aes.motive;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Queue;
 import java.util.Set;
 
@@ -17,12 +17,12 @@ public class ConnectedBlocks {
 	public static int MAX_BLOCKS_CAN_MOVE = 16384;
 
 	private ConnectedBlocks() {
-		this.blocks = new HashSet<Vector3i>();
+		this.blocks = new LinkedHashSet<Vector3i>();
 	}
 
 	public ConnectedBlocks(Vector3i location) {
 		this.location = location;
-		this.blocks = new HashSet<Vector3i>();
+		this.blocks = new LinkedHashSet<Vector3i>();
 		this.blocks.add(location);
 	}
 
@@ -38,7 +38,7 @@ public class ConnectedBlocks {
 
 	public ConnectedBlocks(World world, Vector3i location) {
 		this(location);
-		final Set<Vector3i> checked = new HashSet<Vector3i>();
+		final Set<Vector3i> checked = new LinkedHashSet<Vector3i>();
 		addConnectedBlocks(world, checked, this.location, null);
 	}
 
@@ -81,12 +81,12 @@ public class ConnectedBlocks {
 			return true;
 		}
 
-		final Set<Vector3i> candidates = new HashSet<Vector3i>();
+		final Set<Vector3i> candidates = new LinkedHashSet<Vector3i>();
 		candidates.addAll(this.blocks);
 		candidates.remove(locationToToggle);
 
-		this.blocks = new HashSet<Vector3i>();
-		final Set<Vector3i> checked = new HashSet<Vector3i>();
+		this.blocks = new LinkedHashSet<Vector3i>();
+		final Set<Vector3i> checked = new LinkedHashSet<Vector3i>();
 		addConnectedBlocks(world, checked, this.location, candidates);
 		return true;
 	}

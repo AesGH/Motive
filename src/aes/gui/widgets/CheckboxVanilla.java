@@ -31,15 +31,15 @@ public class CheckboxVanilla extends Checkbox {
 
 	@Override
 	public void draw(int mx, int my) {
-		this.mc.renderEngine.bindTexture(TEXTURE);
+		Minecraft.getMinecraft().renderEngine.bindTexture(TEXTURE);
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-		drawTexturedModalRect(this.x, this.y, 0, this.check ? SIZE : 0, SIZE, SIZE);
-		this.mc.fontRenderer.drawStringWithShadow(this.str, this.x + SIZE + 1, this.y + 1, inBounds(mx, my) ? 16777120 : 0xffffff);
+		drawTexturedModalRect((int) this.x, (int) this.y, 0, this.check ? SIZE : 0, SIZE, SIZE);
+		fontRenderer.drawStringWithShadow(this.str, (int) this.x + SIZE + 1, (int) this.y + 1, inBounds(mx, my) ? 16777120 : 0xffffff);
 	}
 
 	@Override
 	public void handleClick(int mx, int my, int button) {
-		this.mc.sndManager.playSoundFX("random.click", 1.0F, 1.0F);
+		Minecraft.getMinecraft().sndManager.playSoundFX("random.click", 1.0F, 1.0F);
 		super.handleClick(mx, my, button);
 	}
 

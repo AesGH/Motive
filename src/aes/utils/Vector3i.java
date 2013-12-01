@@ -50,6 +50,19 @@ public class Vector3i {
 		return other.x == this.x && other.y == this.y && other.z == this.z;
 	}
 
+	public String getDirection() {
+		String result = "";
+		for (final ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
+			if (direction.offsetX == this.x && this.x != 0 || direction.offsetY == this.y && this.y != 0 || direction.offsetZ == this.z && this.z != 0) {
+				if (!result.isEmpty()) {
+					result += "+";
+				}
+				result += direction.name().toLowerCase();
+			}
+		}
+		return result;
+	}
+
 	public ForgeDirection getForgeDirection() {
 		for (final ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
 			if (direction.offsetX == this.x && direction.offsetY == this.y && direction.offsetZ == this.z)
@@ -74,6 +87,10 @@ public class Vector3i {
 
 	public boolean isEmpty() {
 		return this.x == 0 && this.y == 0 && this.z == 0;
+	}
+
+	public Vector3i negate() {
+		return new Vector3i(-this.x, -this.y, -this.z);
 	}
 
 	public Vector3i normalise() {

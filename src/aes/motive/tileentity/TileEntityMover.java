@@ -16,7 +16,16 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 	private float flashPct;
 	public MoverMode mode = MoverMode.AwayFromSignal;
 
-	static String[] commands = new String[] { "isActive", "isMoving", "move", "lock" };
+	static String[] commands = new String[] { "isActive", "isMoving", "move", "lockConnectedBlocks", "unlockConnectedBlocks" };
+
+	public static final String usageMove = "move(x, y, z) or move(\"direction\")";
+
+	public static final String usageIsMoving = "isMoving()";
+
+	public static final String usageIsActive = "isActive()";
+	public static final String usageLock = "lockConnectedBlocks()";
+	public static final String usageUnlock = "unlockConnectedBlocks()";
+	private Vector3i requestedDirection = new Vector3i();
 
 	public TileEntityMover() {
 		this.blockType = Motive.BlockMover;
@@ -32,39 +41,49 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 			throw new Exception("Block is not set to allow computer control");
 		final String command = commands[method];
 
-		if (command.equals("isActive"))
+		if (command.equals("isActive")) {
+			if (arguments.length != 0)
+				throw new Exception("Usage: " + usageIsActive);
 			return new Object[] { getActive() };
-
-		if (command.equals("isMoving"))
+		}
+		if (command.equals("isMoving")) {
+			if (arguments.length != 0)
+				throw new Exception("Usage: " + usageIsMoving);
 			return new Object[] { this.moving };
+		}
 
 		if (command.equals("move")) {
-			if (this.moving) {
-				Motive.log(this.worldObj, "IPeripheral.move returning false");
-				return new Object[] { false };
-			}
-
 			Motive.log(this.worldObj, "IPeripheral.move");
 			if (arguments.length == 3) {
-				setPowered(new Vector3i(getIntArg(arguments, 0), getIntArg(arguments, 1), getIntArg(arguments, 2)));
+				if (this.moving)
+					return new Object[] { false };
+				setRequestedDirection(new Vector3i(getIntArg(arguments, 0), getIntArg(arguments, 1), getIntArg(arguments, 2)));
 				return new Object[] { checkBeginMoving() };
 			}
 			if (arguments.length == 1) {
+				if (this.moving)
+					return new Object[] { false };
 				final String direction = getStringArg(arguments, 0);
 				final ForgeDirection side = ForgeDirection.valueOf(direction.toUpperCase());
 				if (side != null) {
-					setPowered(new Vector3i(side.offsetX, side.offsetY, side.offsetZ));
+					setRequestedDirection(new Vector3i(side.offsetX, side.offsetY, side.offsetZ));
 					return new Object[] { checkBeginMoving() };
 				}
 			}
-			throw new Exception("Usage: move(x, y, z) or move(\"direction\") north, south, east, west, up or down");
+			throw new Exception("Usage: " + usageMove);
 		}
 
-		if (command.equals("lock"))
+		if (command.equals("lockConnectedBlocks")) {
+			if (arguments.length != 0)
+				throw new Exception("Usage: " + usageLock);
 			return new Object[] { setLocked(true) };
+		}
 
-		if (command.equals("unlock"))
+		if (command.equals("resetConnectedBlocks")) {
+			if (arguments.length != 0)
+				throw new Exception("Usage: " + usageUnlock);
 			return new Object[] { setLocked(false) };
+		}
 
 		return null;
 	}
@@ -86,6 +105,13 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 	public void detach(IComputerAccess computer) {
 	}
 
+	public void flash() {
+		Motive.packetHandler.sendThisMethodToClient(this.worldObj, this);
+		if (this.worldObj.isRemote) {
+			setFlashPct(100f);
+		}
+	}
+
 	@Override
 	public boolean getActive() {
 		return this.active;
@@ -94,6 +120,10 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 	@Override
 	public Block getBlockType() {
 		return Motive.BlockMover;
+	}
+
+	public float getFlashPct() {
+		return this.flashPct;
 	}
 
 	public boolean getHighlight() {
@@ -120,6 +150,25 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 			this.powered = new Vector3i();
 		}
 		return this.powered;
+	}
+
+	public Vector3i getRequestedDirection() {
+		return this.requestedDirection;
+	}
+
+	public Vector3i getSignals() {
+		int x = 0, y = 0, z = 0;
+		final Vector3i location = getLocation();
+		for (final ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
+			final Vector3i from = location.increment(direction);
+			if (this.worldObj.isBlockProvidingPowerTo(from.x, from.y, from.z, direction.getOpposite().ordinal()) != 0
+					|| this.worldObj.getIndirectPowerOutput(from.x, from.y, from.z, direction.ordinal())) {
+				x += direction.offsetX;
+				y += direction.offsetY;
+				z += direction.offsetZ;
+			}
+		}
+		return new Vector3i(x, y, z).normalise();
 	}
 
 	@Override
@@ -165,7 +214,7 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 		setHighlight(nbtTagCompound.getBoolean("highlight"));
 		this.mode = MoverMode.values()[nbtTagCompound.getInteger("mode")];
 		setSpeed(nbtTagCompound.getFloat("speed"));
-
+		setRequestedDirection(readVector3i(nbtTagCompound, "requested"));
 	}
 
 	@Override
@@ -182,8 +231,16 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 		if (this.active != value) {
 			this.active = value;
 			Motive.log(this.worldObj, "active set to " + this.active);
+			if (!this.active) {
+				this.requestedDirection = new Vector3i();
+			}
 			updateBlock();
 		}
+	}
+
+	public void setFlashPct(float flashPct) {
+		this.flashPct = flashPct;
+		markConnectedBlocksForRender();
 	}
 
 	public void setHighlight(boolean highlight) {
@@ -209,6 +266,13 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 		this.powered = powered;
 	}
 
+	public void setRequestedDirection(Vector3i requestedDirection) {
+		if (!this.requestedDirection.equals(requestedDirection)) {
+			this.requestedDirection = requestedDirection;
+			updateBlock();
+		}
+	}
+
 	@Override
 	public void setSpeed(float speed) {
 		final float newSpeed = Math.max(0f, Math.min(1f, speed));
@@ -219,38 +283,34 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 	}
 
 	@Override
-	boolean updatePowered() {
-		if (this.mode != MoverMode.ComputerControlled) {
-			int poweredX = 0, poweredY = 0, poweredZ = 0;
-			final Vector3i location = getLocation();
-			for (final ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
-				final Vector3i from = location.increment(direction);
+	public boolean toggleConnectedBlock(Vector3i location) {
+		if (!getHighlight()) {
+			flash();
+		}
+		return super.toggleConnectedBlock(location);
+	}
 
-				if (this.worldObj.isBlockProvidingPowerTo(from.x, from.y, from.z, direction.getOpposite().ordinal()) != 0
-						|| this.worldObj.getIndirectPowerOutput(from.x, from.y, from.z, direction.ordinal())) {
-					poweredX += direction.offsetX;
-					poweredY += direction.offsetY;
-					poweredZ += direction.offsetZ;
-				}
+	@Override
+	public void updateEntity() {
+		super.updateEntity();
+		if (this.flashPct != 0) {
+			setFlashPct(this.flashPct - 8);
+			if (Math.abs(this.flashPct) < 10) {
+				this.flashPct = 0;
 			}
-			setPowered((this.mode == MoverMode.TowardsSignal ? new Vector3i(poweredX, poweredY, poweredZ) : new Vector3i(-poweredX, -poweredY, -poweredZ))
-					.normalise());
+		}
+	}
+
+	@Override
+	public boolean updatePowered() {
+		if (this.mode == MoverMode.ComputerControlled || this.mode == MoverMode.Remote) {
+			setPowered(getRequestedDirection());
+		} else {
+			setPowered(this.mode == MoverMode.TowardsSignal ? getSignals() : getSignals().negate());
 		}
 		return !getPowered().isEmpty();
 	}
 
-	@Override public void updateEntity() {
-		super.updateEntity();
-		if(flashPct != 0)
-		{
-			setFlashPct(flashPct - 8);
-			if(Math.abs(flashPct) < 10)
-			{
-				flashPct = 0;
-			}
-		}
-	};
-	
 	@Override
 	public void writeToNBT(NBTTagCompound nbtTagCompound) {
 		super.writeToNBT(nbtTagCompound);
@@ -258,31 +318,6 @@ public class TileEntityMover extends TileEntityMoverBase implements dan200.compu
 		nbtTagCompound.setBoolean("highlight", getHighlight());
 		nbtTagCompound.setInteger("mode", this.mode.ordinal());
 		nbtTagCompound.setFloat("speed", getSpeed());
-	}
-
-	public float getFlashPct() {
-		return flashPct;
-	}
-
-	public void flash() {
-		Motive.packetHandler.sendThisMethodToClient(worldObj, this);
-		if(worldObj.isRemote)
-		{		
-			setFlashPct(100f);
-		}
-	}
-	
-	public void setFlashPct(float flashPct) {
-		this.flashPct = flashPct;
-		markConnectedBlocksForRender();
-	}
-	
-	@Override
-	public boolean toggleConnectedBlock(Vector3i location) {
-		if(!getHighlight())
-		{
-			flash();			
-		}
-		return super.toggleConnectedBlock(location);
+		writeVector(nbtTagCompound, "requested", getRequestedDirection());
 	}
 }

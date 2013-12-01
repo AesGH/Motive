@@ -19,7 +19,7 @@ public class ModelBreaker extends ModelMotiveBase {
 
 	@Override
 	protected void renderModel(TileEntity tileEntity, ItemStack stack, float partialTickTime) {
-		drawBoltedFrame();
+		// drawBoltedFace(true);//Frame();
 
 		startDrawing();
 		texture(Motive.resourceBreakerTexture);

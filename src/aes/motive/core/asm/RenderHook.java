@@ -1,8 +1,9 @@
 package aes.motive.core.asm;
 
 import java.util.ConcurrentModificationException;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -25,31 +26,22 @@ import aes.motive.tileentity.TileEntityMover;
 import aes.motive.tileentity.TileEntityMoverBase;
 import aes.utils.Obfuscation;
 import aes.utils.PrivateFieldAccess;
-import aes.utils.Vector2i;
 import aes.utils.Vector3f;
 import aes.utils.Vector3i;
 
 public class RenderHook {
 	public static RenderHook INSTANCE = new RenderHook();
 
-	public static boolean worldRendererContainsMovingBlocks(WorldRenderer worldrenderer) {
-		worldrenderer.worldObj.theProfiler.startSection("checkContainsMoving");
-
+	public boolean worldRendererContainsMovingBlocks(WorldRenderer worldrenderer) {
+		// worldrenderer.worldObj.theProfiler.startSection("checkContainsMoving");
 		for (final TileEntityMoverBase tileEntityMoverBase : TileEntityMoverBase.getMovers(worldrenderer.worldObj).values()) {
-			if (tileEntityMoverBase.moving && tileEntityMoverBase.affectedChunks.contains(new Vector2i(worldrenderer.posX >> 4, worldrenderer.posZ >> 4)))
-			// if(WorldUtils.containsChunk(tileEntityMoverBase.getAffectedBlocks(),
-			// chunkLocation))
-			{
-				worldrenderer.worldObj.theProfiler.endSection();
-				return false;
-			}
+			if (tileEntityMoverBase.moving && tileEntityMoverBase.getAffectedWorldRenderers().contains(worldrenderer))
+				// worldrenderer.worldObj.theProfiler.endSection();
+				return true;
 		}
-		worldrenderer.worldObj.theProfiler.endSection();
+		// worldrenderer.worldObj.theProfiler.endSection();
 		return false;
 	}
-
-	// public Map<Vector3i, TileEntityMoverBase> movers = new HashMap<Vector3i,
-	// TileEntityMoverBase>();
 
 	Block modifyingBlock = null;
 
@@ -63,7 +55,7 @@ public class RenderHook {
 
 	private int chunkFromZ;
 
-	List<TileEntityMoverBase> moversToRemove = new LinkedList<TileEntityMoverBase>();
+	Queue<TileEntityMoverBase> moversToRemove = new ConcurrentLinkedQueue<TileEntityMoverBase>();
 
 	private Vector3f viewEntityOffset;
 
@@ -71,7 +63,16 @@ public class RenderHook {
 
 	Entity offsettingEntity;
 
+	// Timer timer;
+
+	private double offsetTessellatorX;
+	private double offsetTessellatorY;
+	private double offsetTessellatorZ;
+
 	private RenderHook() {
+		// this.timer = (Timer)
+		// PrivateFieldAccess.getValue(Minecraft.getMinecraft(),
+		// Obfuscation.getFieldName("", "timer", ""));
 	}
 
 	public MovingObjectPosition collisionRayTrace(World par1World, int par2, int par3, int par4, Vec3 par5Vec3, Vec3 par6Vec3, boolean par3a, boolean par4a,
@@ -140,7 +141,7 @@ public class RenderHook {
 	}
 
 	public TileEntityMoverBase getMoverMoving(World world, int x, int y, int z) {
-		Minecraft.getMinecraft().mcProfiler.startSection("getMoverMoving");
+		// Minecraft.getMinecraft().mcProfiler.startSection("getMoverMoving");
 
 		try {
 			// if(false)
@@ -159,11 +160,12 @@ public class RenderHook {
 		} catch (final ConcurrentModificationException e) {
 			return getMoverMoving(world, x, y, z);
 		} finally {
+
 			for (final TileEntityMoverBase tileEntityMoverBase : this.moversToRemove) {
 				TileEntityMoverBase.removeMover(tileEntityMoverBase);
 			}
 			this.moversToRemove.clear();
-			Minecraft.getMinecraft().mcProfiler.endSection();
+			// Minecraft.getMinecraft().mcProfiler.endSection();
 		}
 	}
 
@@ -172,7 +174,7 @@ public class RenderHook {
 		final TileEntityMoverBase tileEntityMoverBase = getMoverMoving(world, x, y, z);
 		if (tileEntityMoverBase instanceof TileEntityMover) {
 			final TileEntityMover tileEntityMover = (TileEntityMover) tileEntityMoverBase;
-			if (tileEntityMover.getHighlight() || (tileEntityMover.getFlashPct() != 0)) {
+			if (tileEntityMover.getHighlight() || tileEntityMover.getFlashPct() != 0) {
 
 				if (
 				// !hasStartedDrawing &&
@@ -190,13 +192,12 @@ public class RenderHook {
 					GL11.glTranslatef(-8.0F, -8.0F, -8.0F);
 					GL11.glScalef(f, f, f);
 					GL11.glTranslatef(8.0F, 8.0F, 8.0F);
-					// ForgeHooksClient.beforeRenderPass(l1); Noop fo now, TODO:
-					// Event if anyone needs
+					
 					Tessellator.instance.startDrawingQuads();
 					Tessellator.instance.setTranslation(-this.chunkFromX, -this.chunkFromY, -this.chunkFromZ);
 				}
 
-				drawHighlightCube(tileEntityMover, x, y, z, tileEntityMover.getHighlight() ? 1f : (tileEntityMover.getFlashPct()/50f));
+				drawHighlightCube(tileEntityMover, x, y, z, tileEntityMover.getHighlight() ? 1f : tileEntityMover.getFlashPct() / 50f);
 				return true;
 			}
 		}
@@ -204,7 +205,6 @@ public class RenderHook {
 	}
 
 	public boolean highlightIfConnected(boolean hasStartedDrawing, int glRenderList, int pass, int chunkFromX, int chunkFromY, int chunkFromZ) {
-		// if(pass != 7) return false;
 		if (pass == 0)
 			return true;
 
@@ -230,7 +230,6 @@ public class RenderHook {
 	}
 
 	public boolean isBlockMoving(int par1, int par2, int par3) {
-		// return false;
 		return getMoverMoving(Minecraft.getMinecraft().theWorld, par1, par2, par3) != null;
 	}
 
@@ -246,22 +245,6 @@ public class RenderHook {
 					(float) block.getBlockBoundsMinZ() + mover.moved.z, (float) block.getBlockBoundsMaxX() + mover.moved.x, (float) block.getBlockBoundsMaxY()
 							+ mover.moved.y, (float) block.getBlockBoundsMaxZ() + mover.moved.z);
 		}
-	}
-
-	public void modifyMovingTesselator(int x, int y, int z) {
-		final TileEntityMoverBase mover = getMoverMoving(Minecraft.getMinecraft().theWorld, x, y, z);
-		if (mover != null) {
-			this.modifyingMover = mover;
-			this.movedTessellators = new LinkedList<Tessellator>();
-
-			if (!this.movedTessellators.contains(Tessellator.instance)) {
-				this.movedTessellators.add(Tessellator.instance);
-				Tessellator.instance.addTranslation(mover.moved.x, mover.moved.y, mover.moved.z);
-			}
-
-			return;
-		}
-		this.movedTessellators = null;
 	}
 
 	public void offsetEntityPosition(Entity entity) {
@@ -280,6 +263,24 @@ public class RenderHook {
 		} else {
 			this.entityOffset = new Vector3f();
 		}
+	}
+
+	public void offsetMovingTesselator(int x, int y, int z) {
+		final TileEntityMoverBase mover = getMoverMoving(Minecraft.getMinecraft().theWorld, x, y, z);
+		if (mover == null)
+			return;
+
+		Vector3f lastMoved = mover.getMovedPreviousTick();
+		final Vector3f moved = mover.moved;
+		if (lastMoved == null) {
+			lastMoved = mover.moved;
+		}
+
+		this.offsetTessellatorX = moved.x;
+		this.offsetTessellatorY = moved.y;
+		this.offsetTessellatorZ = moved.z;
+
+		Tessellator.instance.addTranslation((float) this.offsetTessellatorX, (float) this.offsetTessellatorY, (float) this.offsetTessellatorZ);
 	}
 
 	public void offsetOtherEntityPosition(Entity entity) {
@@ -469,7 +470,7 @@ public class RenderHook {
 		Tessellator.instance.setBrightness(0x00F000F0);
 
 		// GL11.glColorMask(0xff, 0x00, 00, 0x40);
-		tessellator.setColorRGBA(0xFF, 0xff, 0xff, (int)(density * 0x40));
+		tessellator.setColorRGBA(0xFF, 0xff, 0xff, (int) (density * 0x40));
 
 		tessellator.setNormal(-direction.offsetX, -direction.offsetY, -direction.offsetZ);
 
@@ -541,12 +542,14 @@ public class RenderHook {
 	}
 
 	public void resetMovingTesselator() {
-		if (this.movedTessellators != null) {
-			for (final Tessellator movedTessellator : this.movedTessellators) {
-				movedTessellator.addTranslation(-this.modifyingMover.moved.x, -this.modifyingMover.moved.y, -this.modifyingMover.moved.z);
-			}
-		}
-		this.movedTessellators = null;
+		// if (this.movedTessellators != null) {
+		// for (final Tessellator movedTessellator : this.movedTessellators) {
+		Tessellator.instance.addTranslation((float) -this.offsetTessellatorX, (float) -this.offsetTessellatorY, (float) -this.offsetTessellatorZ);
+		// }
+		// }
+		this.offsetTessellatorX = this.offsetTessellatorY = this.offsetTessellatorZ = 0;
+
+		// this.movedTessellators = null;
 	}
 
 	public void resetOtherEntityPosition(Entity entity) {

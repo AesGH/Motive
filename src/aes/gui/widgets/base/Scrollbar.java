@@ -55,14 +55,14 @@ public abstract class Scrollbar extends Widget {
 			this.yClick = -1;
 		}
 
-		drawBoundary(this.x, this.topY, this.width, this.height);
+		drawBoundary((int) this.x, this.topY, (int) this.width, (int) this.height);
 
 		int y = -this.offset * (this.bottomY - this.topY - length) / getHeightDifference() + this.topY;
 		if (y < this.topY) {
 			y = this.topY;
 		}
 
-		drawScrollbar(this.x, y, this.width, length);
+		drawScrollbar((int) this.x, y, (int) this.width, length);
 	}
 
 	protected abstract void drawBoundary(int x, int y, int width, int height);

@@ -3,6 +3,7 @@ package aes.gui.widgets;
 import java.util.Arrays;
 import java.util.List;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
@@ -39,7 +40,7 @@ public class ItemButton extends Button implements Shiftable {
 	public ItemButton(ItemStack item, ButtonHandler handler) {
 		super(WIDTH, HEIGHT, handler);
 
-		this.parent = this.mc.currentScreen;
+		this.parent = Minecraft.getMinecraft().currentScreen;
 		this.zLevel = 100;
 		setItem(item);
 	}
@@ -52,7 +53,7 @@ public class ItemButton extends Button implements Shiftable {
 		this.hover = inBounds(mx, my);
 		if (this.hover) {
 			GL11.glDisable(GL11.GL_DEPTH_TEST);
-			drawRect(this.x, this.y, this.x + this.width, this.y + this.height, 0x55909090);
+			drawRect((int) this.x, (int) this.y, (int) (this.x + this.width), (int) (this.y + this.height), 0x55909090);
 			GL11.glEnable(GL11.GL_DEPTH_TEST);
 			this.tooltip.get(0).setPosition(mx, my);
 		}
@@ -61,18 +62,13 @@ public class ItemButton extends Button implements Shiftable {
 			OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
 			GL11.glEnable(GL12.GL_RESCALE_NORMAL);
 			itemRenderer.zLevel = this.zLevel;
-			itemRenderer.renderItemAndEffectIntoGUI(this.mc.fontRenderer, this.mc.getTextureManager(), this.item, this.x + 1, this.y + 1);
+			itemRenderer.renderItemAndEffectIntoGUI(fontRenderer, Minecraft.getMinecraft().getTextureManager(), this.item, (int) this.x + 1, (int) this.y + 1);
 			itemRenderer.zLevel = 0;
 			GL11.glDisable(GL12.GL_RESCALE_NORMAL);
 			RenderHelper.disableStandardItemLighting();
 		} else {
-			drawString(this.mc.fontRenderer, "Air", this.x + 3, this.y + 5, -1);
+			drawString(fontRenderer, "Air", (int) this.x + 3, (int) this.y + 5, -1);
 		}
-	}
-
-	@Override
-	public List<Widget> getTooltips() {
-		return this.hover ? this.tooltip : super.getTooltips();
 	}
 
 	protected void setItem(ItemStack item) {

@@ -1,5 +1,5 @@
 package aes.motive.tileentity;
 
 public enum MoverMode {
-	TowardsSignal, AwayFromSignal, ComputerControlled
+	TowardsSignal, AwayFromSignal, ComputerControlled, Remote
 }

@@ -1,6 +1,7 @@
 package aes.gui.core;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import net.minecraft.client.gui.FontRenderer;
@@ -29,15 +30,26 @@ public abstract class BasicScreen extends GuiScreen {
 		}
 	}
 
+	public static int getScale() {
+		return scale;
+	}
+
 	private final GuiScreen parent;
 	private boolean hasInit, closed;
+
 	protected List<Container> containers;
 
 	protected Container selectedContainer;
 
+	static int scale;
+
+	public BasicScreen() {
+		this(null);
+	}
+
 	public BasicScreen(GuiScreen parent) {
+		this.containers = new LinkedList<Container>();
 		this.parent = parent;
-		this.containers = new ArrayList<Container>();
 	}
 
 	public void close() {
@@ -64,7 +76,7 @@ public abstract class BasicScreen extends GuiScreen {
 	public void drawScreen(int mx, int my, float f) {
 		drawBackground();
 		final List<Widget> overlays = new ArrayList<Widget>();
-		final int scale = new ScaledResolution(this.mc.gameSettings, this.mc.displayWidth, this.mc.displayHeight).getScaleFactor();
+		scale = new ScaledResolution(this.mc.gameSettings, this.mc.displayWidth, this.mc.displayHeight).getScaleFactor();
 		for (final Container c : this.containers) {
 			overlays.addAll(c.draw(mx, my, scale));
 		}

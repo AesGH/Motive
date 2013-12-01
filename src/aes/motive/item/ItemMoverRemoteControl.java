@@ -1,6 +1,8 @@
 package aes.motive.item;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.IconRegister;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.EnumAction;
@@ -11,10 +13,15 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ChatMessageComponent;
 import net.minecraft.world.World;
+
+import org.lwjgl.input.Mouse;
+
 import aes.motive.Motive;
+import aes.motive.tileentity.MoverMode;
 import aes.motive.tileentity.TileEntityMover;
 import aes.motive.tileentity.TileEntityMoverBase;
 import aes.utils.Vector3i;
+import aes.utils.WorldUtils;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -54,6 +61,17 @@ public class ItemMoverRemoteControl extends Item {
 	}
 
 	public static void playerUsedRemote(ItemStack stack, EntityPlayer player, World world, int x, int y, int z) {
+		final TileEntityMover tileEntityMoverPairedTo = ItemMoverRemoteControl.getPairedMover(world, stack);
+		if (tileEntityMoverPairedTo != null) {
+			if (tileEntityMoverPairedTo.mode == MoverMode.Remote) {
+				final Vector3i directionLooking = WorldUtils.getDirectionLooking(player);
+				if (tileEntityMoverPairedTo.getRequestedDirection().equals(directionLooking)) {
+					tileEntityMoverPairedTo.setRequestedDirection(new Vector3i());
+				} else {
+					tileEntityMoverPairedTo.setRequestedDirection(directionLooking);
+				}
+			}
+		}
 	}
 
 	private static void unpair(ItemStack stack) {
@@ -63,6 +81,8 @@ public class ItemMoverRemoteControl extends Item {
 			return;
 		stack.stackTagCompound.removeTag("pair");
 	}
+
+	private boolean clicking;
 
 	public ItemMoverRemoteControl(int id) {
 		super(id);
@@ -149,7 +169,19 @@ public class ItemMoverRemoteControl extends Item {
 
 	@Override
 	public boolean onItemUseFirst(ItemStack stack, EntityPlayer player, World world, int x, int y, int z, int side, float hitX, float hitY, float hitZ) {
-		if (world.isRemote) {
+		Motive.log(world, "onItemFirst");
+		if (!world.isRemote) {
+
+			/*
+			 * final TileEntityMover tileEntityMoverPairedTo =
+			 * ItemMoverRemoteControl.getPairedMover(world, stack); if
+			 * (tileEntityMoverPairedTo != null) {
+			 * if(tileEntityMoverPairedTo.mode == MoverMode.Remote) { Vec3
+			 * lookVec = player.getLookVec();
+			 * tileEntityMoverPairedTo.setPowered(new
+			 * Vector3i((int)lookVec.xCoord, (int)lookVec.yCoord,
+			 * (int)lookVec.zCoord)); } }
+			 */
 			// isClickingOnBlock = true;
 
 			// Motive.packetHandler.sendPlayerUsedRemote(player.inventory.currentItem,
@@ -162,6 +194,26 @@ public class ItemMoverRemoteControl extends Item {
 		 * world, x, y, z);
 		 */
 		// return false;
+	}
+
+	@Override
+	public void onUpdate(ItemStack par1ItemStack, World par2World, Entity par3Entity, int par4, boolean par5) {
+		super.onUpdate(par1ItemStack, par2World, par3Entity, par4, par5);
+
+		if (!par2World.isRemote)
+			return;
+
+		if (this.clicking) {
+			if (!Mouse.isButtonDown(0) || !Minecraft.getMinecraft().inGameHasFocus) {
+				this.clicking = false;
+			}
+			return;
+		}
+
+		if (Mouse.isButtonDown(0) && Minecraft.getMinecraft().objectMouseOver == null && Minecraft.getMinecraft().inGameHasFocus) {
+			this.clicking = true;
+			Motive.packetHandler.leftClickedOpenSpaceWithItem((EntityPlayer) par3Entity);
+		}
 	}
 
 	@Override

@@ -2,16 +2,12 @@ package aes.gui.widgets;
 
 import java.util.List;
 
-import net.minecraft.client.Minecraft;
-import aes.gui.widgets.base.Widget;
-
-public class MultiTooltip extends Widget {
+public class MultiTooltip extends Tooltip {
 
 	public static int getMaxStringWidth(List<String> strings) {
-		final Minecraft mc = Minecraft.getMinecraft();
 		int max = 0;
 		for (final String s : strings) {
-			final int width = mc.fontRenderer.getStringWidth(s);
+			final int width = fontRenderer.getStringWidth(s);
 			if (width > max) {
 				max = width;
 			}
@@ -24,21 +20,12 @@ public class MultiTooltip extends Widget {
 	private final List<String> text;
 
 	public MultiTooltip(List<String> strings) {
-		super(getMaxStringWidth(strings) + 4, strings.size() * 12);
+		super(getMaxStringWidth(strings) + 2 * marginX, strings.size() * (fontRenderer.FONT_HEIGHT + 1) + 2 * marginY);
 
 		this.text = strings;
 		this.zLevel = 1.0f;
 		this.color = 0xff000000;
-		this.txtColor = 0xffffff;
-	}
-
-	public MultiTooltip(List<String> strings, int color, int txtColor) {
-		super(getMaxStringWidth(strings) + 4, strings.size() * 12);
-
-		this.text = strings;
-		this.zLevel = 1.0f;
-		this.color = color;
-		this.txtColor = txtColor;
+		this.txtColor = 0xff000000;
 	}
 
 	@Override
@@ -48,19 +35,23 @@ public class MultiTooltip extends Widget {
 
 	@Override
 	public void draw(int mx, int my) {
-		drawRect(this.x, this.y, this.x + this.width, this.y + this.height, this.color);
+		super.draw(mx, my);
+		// drawRect(this.x, this.y, this.x + this.width, this.y + this.height,
+		// this.color);
 
-		int textY = this.y + 2;
+		int textY = (int) this.y + marginY;
 		for (final String line : this.text) {
-			this.mc.fontRenderer.drawStringWithShadow(line, this.x + 2, textY, this.txtColor);
-			textY += 11;
+			fontRenderer.drawString(line, (int) this.x + marginX, textY, this.txtColor);
+			textY += fontRenderer.FONT_HEIGHT + 1;
 		}
 	}
 
+	@Override
 	public void setBackgroundColor(int color) {
 		this.color = color;
 	}
 
+	@Override
 	public void setTextColor(int color) {
 		this.txtColor = color;
 	}

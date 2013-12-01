@@ -32,7 +32,6 @@ import cpw.mods.fml.relauncher.IFMLLoadingPlugin.MCVersion;
 
 @Mod(modid = "motive", modLanguage = "java", name = "Motive", version = "@VERSION@.@BUILD_NUMBER@", dependencies = "required-after:motivecore")
 @NetworkMod(clientSideRequired = true, serverSideRequired = true)
-// @Name("motive")
 @MCVersion("1.6.4")
 public class Motive {
 	@Instance("motive")
@@ -41,17 +40,17 @@ public class Motive {
 	@SidedProxy(serverSide = "aes.motive.ProxyServer", clientSide = "aes.motive.ProxyClient")
 	public static ProxyServer proxy;
 
-	private static final Logger logger = Logger.getLogger(Motive.class.getName());
+	public static PacketHandler packetHandler = new PacketHandler("Motive", TileEntityMover.class);
 
 	public static final CreativeTabs CreativeTab = new CreativeTab();
 
-	// public static Block BlockTest;
 	public static Block BlockMote;
 	public static Block BlockVe;
 	public static Block BlockMover;
 	public static Block BlockBreaker;
 
 	public static Item ItemMoverRemoteControl;
+
 	public static ResourceLocation resourceMoverTexture = new ResourceLocation("motive", "textures/blocks/mover.png");
 	public static ResourceLocation resourceMoteTexture = new ResourceLocation("motive", "textures/blocks/mote.png");
 	public static ResourceLocation resourcePairedMoteTexture = new ResourceLocation("motive", "textures/blocks/pairedMote.png");
@@ -62,7 +61,9 @@ public class Motive {
 	public static ResourceLocation resourceRemoteControlTexture = new ResourceLocation("motive", "textures/items/moverRemoteIcon.png");
 	public static ResourceLocation resourceBoltedFrameTexture = new ResourceLocation("motive", "textures/blocks/boltedFrame.png");
 	public static ResourceLocation resourceMoverIconTexture = new ResourceLocation("motive", "textures/blocks/moverIcon.png");
-	public static PacketHandler packetHandler = new PacketHandler("Motive", TileEntityMover.class);
+	public static ResourceLocation textureUiBackground = new ResourceLocation("motive", "textures/gui/background.png");
+
+	private static final Logger logger = Logger.getLogger(Motive.class.getName());
 
 	public static void log(String message) {
 		logger.info(message);

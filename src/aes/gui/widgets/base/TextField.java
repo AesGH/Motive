@@ -71,7 +71,7 @@ public abstract class TextField extends FocusableWidget {
 
 		final int j = this.cursorPosition - this.charOffset;
 		int k = this.selectionEnd - this.charOffset;
-		final String s = this.mc.fontRenderer.trimStringToWidth(this.text.substring(this.charOffset), getInternalWidth());
+		final String s = fontRenderer.trimStringToWidth(this.text.substring(this.charOffset), getInternalWidth());
 		final boolean flag = j >= 0 && j <= s.length();
 		final boolean cursor = this.focused && this.cursorCounter / 6 % 2 == 0 && flag;
 		final int l = getDrawX();
@@ -84,31 +84,31 @@ public abstract class TextField extends FocusableWidget {
 
 		if (s.length() > 0) {
 			final String s1 = flag ? s.substring(0, j) : s;
-			j1 = this.mc.fontRenderer.drawStringWithShadow(s1, l, i1, this.color);
+			j1 = fontRenderer.drawStringWithShadow(s1, l, i1, this.color);
 		}
 
 		final boolean flag2 = this.cursorPosition < this.text.length() || this.text.length() >= this.maxLength;
 		int k1 = j1;
 
 		if (!flag) {
-			k1 = j > 0 ? l + this.width : l;
+			k1 = j > 0 ? l + (int) this.width : l;
 		} else if (flag2) {
 			k1 = j1 - 1;
 			--j1;
 		}
 		if (s.length() > 0 && flag && j < s.length()) {
-			this.mc.fontRenderer.drawStringWithShadow(s.substring(j), j1, i1, this.color);
+			fontRenderer.drawStringWithShadow(s.substring(j), j1, i1, this.color);
 		}
 		if (cursor) {
 			if (flag2) {
-				Gui.drawRect(k1, i1 - 1, k1 + 1, i1 + 1 + this.mc.fontRenderer.FONT_HEIGHT, -3092272);
+				Gui.drawRect(k1, i1 - 1, k1 + 1, i1 + 1 + fontRenderer.FONT_HEIGHT, -3092272);
 			} else {
-				this.mc.fontRenderer.drawStringWithShadow("_", k1, i1, this.color);
+				fontRenderer.drawStringWithShadow("_", k1, i1, this.color);
 			}
 		}
 		if (k != j) {
-			final int l1 = l + this.mc.fontRenderer.getStringWidth(s.substring(0, k));
-			drawCursorVertical(k1, i1 - 1, l1 - 1, i1 + 1 + this.mc.fontRenderer.FONT_HEIGHT);
+			final int l1 = l + fontRenderer.getStringWidth(s.substring(0, k));
+			drawCursorVertical(k1, i1 - 1, l1 - 1, i1 + 1 + fontRenderer.FONT_HEIGHT);
 		}
 
 	}
@@ -172,11 +172,11 @@ public abstract class TextField extends FocusableWidget {
 
 	@Override
 	public void handleClick(int mx, int my, int button) {
-		int pos = mx - this.x;
+		int pos = mx - (int) this.x;
 		pos -= Math.abs(getInternalWidth() - this.width) / 2;
 
-		final String s = this.mc.fontRenderer.trimStringToWidth(this.text.substring(this.charOffset), getWidth());
-		setCursorPosition(this.mc.fontRenderer.trimStringToWidth(s, pos).length() + this.charOffset);
+		final String s = fontRenderer.trimStringToWidth(this.text.substring(this.charOffset), (int) getWidth());
+		setCursorPosition(fontRenderer.trimStringToWidth(s, pos).length() + this.charOffset);
 	}
 
 	@Override
@@ -272,11 +272,11 @@ public abstract class TextField extends FocusableWidget {
 		}
 
 		final int width = getInternalWidth();
-		final String s = this.mc.fontRenderer.trimStringToWidth(this.text.substring(this.charOffset), width);
+		final String s = fontRenderer.trimStringToWidth(this.text.substring(this.charOffset), width);
 		final int pos = s.length() + this.charOffset;
 
 		if (index == this.charOffset) {
-			this.charOffset -= this.mc.fontRenderer.trimStringToWidth(this.text, width, true).length();
+			this.charOffset -= fontRenderer.trimStringToWidth(this.text, width, true).length();
 		}
 		if (index > pos) {
 			this.charOffset += index - 1;

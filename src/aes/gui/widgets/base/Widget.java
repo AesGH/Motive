@@ -1,10 +1,9 @@
 package aes.gui.widgets.base;
 
-import java.util.Collections;
-import java.util.List;
-
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
+import aes.gui.widgets.Tooltip;
 
 /**
  * 
@@ -13,10 +12,15 @@ import net.minecraft.client.gui.Gui;
  * 
  */
 public abstract class Widget extends Gui {
-
-	protected Minecraft mc = Minecraft.getMinecraft();
-	protected int x, y, width, height;
+	// protected Minecraft mc = Minecraft.getMinecraft();
+	protected float x, y, width, height;
 	protected boolean enabled;
+
+	protected Tooltip tooltip;
+	private boolean hover;
+	private long hoverStart;
+
+	public static FontRenderer fontRenderer = Minecraft.getMinecraft().fontRenderer;
 
 	/**
 	 * 
@@ -71,28 +75,56 @@ public abstract class Widget extends Gui {
 	 */
 	public abstract void draw(int mx, int my);
 
-	public int getHeight() {
+	protected void drawGradientRect(float f, float g, float h, float i, int gradient1, int gradient2) {
+		super.drawGradientRect((int) f, (int) g, (int) h, (int) i, gradient1, gradient2);
+	}
+
+	protected void drawRect(float f, float g, float h, float i, int outlineColor) {
+		super.drawRect((int) f, (int) g, (int) h, (int) i, outlineColor);
+	}
+
+	protected void drawTexturedModalRect(float x, float y, int par3, int par4, float width, float height) {
+		super.drawTexturedModalRect((int) x, (int) y, par3, par4, (int) width, (int) height);
+	}
+
+	public float getHeight() {
 		return this.height;
 	}
 
 	/**
 	 * Called when rendering to get tooltips.
 	 * 
+	 * @param my
+	 * @param mx
+	 * 
 	 * @return Tooltips for this widget
 	 */
-	public List<Widget> getTooltips() {
-		return Collections.emptyList();
+	public Widget getTooltip(int mx, int my) {
+		if (this.tooltip == null)
+			return null;
+
+		final boolean wasHover = this.hover;
+		this.hover = inBounds(mx, my);
+		if (this.hover && !wasHover) {
+			this.hoverStart = System.currentTimeMillis();
+		}
+
+		if (!this.hover || System.currentTimeMillis() - this.hoverStart < 500)
+			return null;
+
+		this.tooltip.setPosition(mx + 3, this.y + this.height);
+		return this.tooltip;
 	}
 
-	public int getWidth() {
+	public float getWidth() {
 		return this.width;
 	}
 
-	public int getX() {
+	public float getX() {
 		return this.x;
 	}
 
-	public int getY() {
+	public float getY() {
 		return this.y;
 	}
 
@@ -158,6 +190,11 @@ public abstract class Widget extends Gui {
 		return false;
 	}
 
+	public void setPosition(float x, float y) {
+		this.x = x;
+		this.y = y;
+	}
+
 	/**
 	 * Set the position of this widget.
 	 * 
@@ -166,9 +203,15 @@ public abstract class Widget extends Gui {
 	 * @param y
 	 *            Top-most Y
 	 */
-	public void setPosition(int x, int y) {
-		this.x = x;
-		this.y = y;
+	public void setPosition(float x, float y, float width, float height) {
+		this.width = width;
+		this.height = height;
+		setPosition(x, y);
+	}
+
+	public Widget setTooltip(Tooltip tooltip) {
+		this.tooltip = tooltip;
+		return this;
 	}
 
 	/**
@@ -189,4 +232,5 @@ public abstract class Widget extends Gui {
 	 */
 	public void update() {
 	}
+
 }

@@ -36,11 +36,6 @@ public class TileEntityMote extends TileEntityMoverBase {
 	@Override
 	public void onBlockNeighborChange() {
 		super.onBlockNeighborChange();
-		final Vector3i movingTo = getLocation().add(getPowered());
-		if (!this.worldObj.isAirBlock(movingTo.x, movingTo.y, movingTo.z)) {
-			Motive.log(this.worldObj, "Changing direction");
-			setCurrentDirection(getCurrentDirection().getRotation(ForgeDirection.UP));
-		}
 	}
 
 	@Override
@@ -54,6 +49,16 @@ public class TileEntityMote extends TileEntityMoverBase {
 			this.currentDirection = currentDirection;
 			updateBlock();
 		}
+	}
+
+	@Override
+	public void updateEntity() {
+		final Vector3i movingTo = getLocation().add(getPowered());
+		if (!this.worldObj.isAirBlock(movingTo.x, movingTo.y, movingTo.z)) {
+			Motive.log(this.worldObj, "Changing direction");
+			setCurrentDirection(getCurrentDirection().getRotation(ForgeDirection.UP));
+		}
+		super.updateEntity();
 	}
 
 	@Override

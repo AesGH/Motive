@@ -69,17 +69,17 @@ public class TextFieldVanilla extends TextField {
 
 	@Override
 	protected int getDrawX() {
-		return this.x + 4;
+		return (int) this.x + 4;
 	}
 
 	@Override
 	protected int getDrawY() {
-		return this.y + (this.height - 8) / 2;
+		return (int) (this.y + (this.height - 8) / 2);
 	}
 
 	@Override
 	public int getInternalWidth() {
-		return this.width - 8;
+		return (int) this.width - 8;
 	}
 
 	public void setInnerColor(int c) {
