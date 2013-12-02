@@ -137,11 +137,9 @@ public class TileEntityBreaker extends TileEntityBase {
 		if (!isBreakableBlock(location))
 			return;
 
-		final Block bl = Block.blocksList[this.worldObj.getBlockId(location.x, location.y, location.z)];
+		final Block block = Block.blocksList[this.worldObj.getBlockId(location.x, location.y, location.z)];
 
-		// ModMotive.logger.info("breaking block: " + bl.getLocalizedName());
-
-		final ArrayList<ItemStack> blockDropped = bl.getBlockDropped(this.worldObj, location.x, location.y, location.z,
+		final ArrayList<ItemStack> blockDropped = block.getBlockDropped(this.worldObj, location.x, location.y, location.z,
 				this.worldObj.getBlockMetadata(location.x, location.y, location.z), 0);
 
 		boolean breakBlock = true;

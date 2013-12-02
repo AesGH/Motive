@@ -171,7 +171,13 @@ public class TileEntityMoverBase extends TileEntityBase {
 
 		final TileEntityMoverBase moverMoving = RenderHook.INSTANCE.getMoverMoving(this.worldObj, this.xCoord, this.yCoord, this.zCoord);
 		if (moverMoving != null && moverMoving != this) {
-			setStatus("Being moved already", moverMoving.blockType.getLocalizedName() + " at " + moverMoving.getLocation());
+			try {
+				setStatus("Being moved already", moverMoving.blockType.getLocalizedName() + " at " + moverMoving.getLocation());
+			} catch (final NullPointerException e) {
+				Motive.log("moverMoving found with problems - moverMoving of type " + moverMoving.getClass().getName() + " with blocktype of "
+						+ (moverMoving.blockType == null ? "null" : moverMoving.blockType.getClass().getName()));
+				throw e;
+			}
 			return false;
 		}
 
@@ -345,7 +351,8 @@ public class TileEntityMoverBase extends TileEntityBase {
 
 		final RenderGlobal renderGlobal = Minecraft.getMinecraft().renderGlobal;
 
-		final List<WorldRenderer> worldRenderersToUpdate = (List<WorldRenderer>) PrivateFieldAccess.getValue(renderGlobal, Obfuscation.getSrgName("worldRenderersToUpdate"));
+		final List<WorldRenderer> worldRenderersToUpdate = (List<WorldRenderer>) PrivateFieldAccess.getValue(renderGlobal,
+				Obfuscation.getSrgName("worldRenderersToUpdate"));
 		for (final WorldRenderer worldrenderer : getAffectedWorldRenderers()) {
 			if (!worldRenderersToUpdate.contains(worldrenderer)) {
 				worldRenderersToUpdate.add(worldrenderer);
@@ -435,7 +442,7 @@ public class TileEntityMoverBase extends TileEntityBase {
 				continue;
 			}
 
-			we.setBlockMetadataAndTileEntityWithoutUpdate(location.x, location.y, location.z, 0, 0, null, false);
+			WorldUtils.setBlockMetadataAndTileEntityWithoutUpdate(this.worldObj, location.x, location.y, location.z, 0, 0, null, false);
 			we.removeBlockScheduledUpdate(we.world, location);
 			we.world.markBlockForRenderUpdate(location.x, location.y, location.z);
 		}
@@ -453,7 +460,7 @@ public class TileEntityMoverBase extends TileEntityBase {
 			}
 
 			anyBlocksLoaded = true;
-			we.setBlockMetadataAndTileEntityWithoutUpdate(c.x, c.y, c.z, block.blockid, block.metadata, block.entity, true);
+			WorldUtils.setBlockMetadataAndTileEntityWithoutUpdate(this.worldObj, c.x, c.y, c.z, block.blockid, block.metadata, block.entity, true);
 			we.setNextBlockUpdate(c, block.blockid, block.nextUpdate);
 		}
 

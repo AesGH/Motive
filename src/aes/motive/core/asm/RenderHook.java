@@ -32,17 +32,6 @@ import aes.utils.Vector3i;
 public class RenderHook {
 	public static RenderHook INSTANCE = new RenderHook();
 
-	public boolean worldRendererContainsMovingBlocks(WorldRenderer worldrenderer) {
-		// worldrenderer.worldObj.theProfiler.startSection("checkContainsMoving");
-		for (final TileEntityMoverBase tileEntityMoverBase : TileEntityMoverBase.getMovers(worldrenderer.worldObj).values()) {
-			if (tileEntityMoverBase.moving && tileEntityMoverBase.getAffectedWorldRenderers().contains(worldrenderer))
-				// worldrenderer.worldObj.theProfiler.endSection();
-				return true;
-		}
-		// worldrenderer.worldObj.theProfiler.endSection();
-		return false;
-	}
-
 	Block modifyingBlock = null;
 
 	TileEntityMoverBase modifyingMover = null;
@@ -63,11 +52,15 @@ public class RenderHook {
 
 	Entity offsettingEntity;
 
+	private double offsetTessellatorX;
+
 	// Timer timer;
 
-	private double offsetTessellatorX;
 	private double offsetTessellatorY;
 	private double offsetTessellatorZ;
+	private int offsetted;
+
+	private int offsettedTE;
 
 	private RenderHook() {
 		// this.timer = (Timer)
@@ -192,7 +185,7 @@ public class RenderHook {
 					GL11.glTranslatef(-8.0F, -8.0F, -8.0F);
 					GL11.glScalef(f, f, f);
 					GL11.glTranslatef(8.0F, 8.0F, 8.0F);
-					
+
 					Tessellator.instance.startDrawingQuads();
 					Tessellator.instance.setTranslation(-this.chunkFromX, -this.chunkFromY, -this.chunkFromZ);
 				}
@@ -266,19 +259,21 @@ public class RenderHook {
 	}
 
 	public void offsetMovingTesselator(int x, int y, int z) {
+		if (++this.offsetted > 1 || this.offsettedTE > 0)
+			return;
+
 		final TileEntityMoverBase mover = getMoverMoving(Minecraft.getMinecraft().theWorld, x, y, z);
 		if (mover == null)
 			return;
 
-		Vector3f lastMoved = mover.getMovedPreviousTick();
-		final Vector3f moved = mover.moved;
-		if (lastMoved == null) {
-			lastMoved = mover.moved;
-		}
-
-		this.offsetTessellatorX = moved.x;
-		this.offsetTessellatorY = moved.y;
-		this.offsetTessellatorZ = moved.z;
+		/*
+		 * Vector3f lastMoved = mover.getMovedPreviousTick(); final Vector3f
+		 * moved = mover.moved; if (lastMoved == null) { lastMoved =
+		 * mover.moved; }
+		 */
+		this.offsetTessellatorX = mover.moved.x;
+		this.offsetTessellatorY = mover.moved.y;
+		this.offsetTessellatorZ = mover.moved.z;
 
 		Tessellator.instance.addTranslation((float) this.offsetTessellatorX, (float) this.offsetTessellatorY, (float) this.offsetTessellatorZ);
 	}
@@ -506,13 +501,24 @@ public class RenderHook {
 		double renderY = y;
 		double renderZ = z;
 
-		if (mover != null) {
-			renderX += mover.moved.x;
-			renderY += mover.moved.y;
-			renderZ += mover.moved.z;
+		if (++this.offsettedTE > 1) {
+			renderer.renderTileEntityAt(tileEntity, renderX, renderY, renderZ, partialTickTime);
+			return;
 		}
-		renderer.renderTileEntityAt(tileEntity, renderX, renderY, renderZ, partialTickTime);
 
+		try {
+			if (mover != null) {
+				renderX += mover.moved.x;
+				renderY += mover.moved.y;
+				renderZ += mover.moved.z;
+			}
+			renderer.renderTileEntityAt(tileEntity, renderX, renderY, renderZ, partialTickTime);
+		} finally {
+			--this.offsettedTE;
+			if (this.offsettedTE < 0) {
+				this.offsettedTE = 0;
+			}
+		}
 	}
 
 	public void resetEntityPosition(Entity entity) {
@@ -542,6 +548,12 @@ public class RenderHook {
 	}
 
 	public void resetMovingTesselator() {
+		if (--this.offsetted > 0)
+			return;
+		if (this.offsetted < 0) {
+			this.offsetted = 0;
+		}
+
 		// if (this.movedTessellators != null) {
 		// for (final Tessellator movedTessellator : this.movedTessellators) {
 		Tessellator.instance.addTranslation((float) -this.offsetTessellatorX, (float) -this.offsetTessellatorY, (float) -this.offsetTessellatorZ);
@@ -574,5 +586,16 @@ public class RenderHook {
 				renderGlobal.tileEntities.addAll(renderer.tileEntityRenderers);
 			}
 		}
+	}
+
+	public boolean worldRendererContainsMovingBlocks(WorldRenderer worldrenderer) {
+		// worldrenderer.worldObj.theProfiler.startSection("checkContainsMoving");
+		for (final TileEntityMoverBase tileEntityMoverBase : TileEntityMoverBase.getMovers(worldrenderer.worldObj).values()) {
+			if (tileEntityMoverBase.moving && tileEntityMoverBase.getAffectedWorldRenderers().contains(worldrenderer))
+				// worldrenderer.worldObj.theProfiler.endSection();
+				return true;
+		}
+		// worldrenderer.worldObj.theProfiler.endSection();
+		return false;
 	}
 }

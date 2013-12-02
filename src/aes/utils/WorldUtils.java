@@ -131,37 +131,6 @@ public class WorldUtils {
 		Minecraft.getMinecraft().renderGlobal.markBlockForRenderUpdate(xCoord, yCoord, zCoord);
 	}
 
-	public World world;
-
-	public WorldUtils(World world) {
-		this.world = world;
-		if (!world.isRemote) {
-			if (pendingTickListEntries == null) {
-				final WorldServer server = (WorldServer) world;
-				pendingTickListEntries = (TreeSet<?>) PrivateFieldAccess.getValue(server, Obfuscation.getSrgName("pendingTickListEntriesTreeSet"));
-				// Obfuscation.getFieldName("net.minecraft.world.Server",
-				// "pendingTickListEntriesTreeSet", "Ljava/util/Set;"));
-				pendingTickListEntriesSet = (Set<?>) PrivateFieldAccess.getValue(server, Obfuscation.getSrgName("pendingTickListEntriesHashSet"));
-				// Obfuscation.getFieldName("net.minecraft.world.Server",
-				// "pendingTickListEntriesHashSet", "Ljava/util/HashSet;"));
-			}
-		}
-	}
-
-	public void removeBlockScheduledUpdate(World world, Vector3i block) {
-		if (!world.isRemote && pendingTickListEntries != null) {
-			final Iterator<?> iterator = pendingTickListEntries.iterator();
-			while (iterator.hasNext()) {
-				final NextTickListEntry entry = (NextTickListEntry) iterator.next();
-				if (entry.xCoord == block.x && entry.yCoord == block.y && entry.zCoord == block.z) {
-					pendingTickListEntries.remove(entry);
-					pendingTickListEntriesSet.remove(entry);
-					return;
-				}
-			}
-		}
-	}
-
 	/*
 	 * public void removeBlockTileEntityWithoutNotify(World world, int par1, int
 	 * par2, int par3) { final Chunk chunk = world.getChunkFromChunkCoords(par1
@@ -169,7 +138,8 @@ public class WorldUtils {
 	 * chunk.removeChunkBlockTileEntity(par1 & 15, par2, par3 & 15); } // notify
 	 * tile changes // func_96440_m(par1, par2, par3, 0); }
 	 */
-	public boolean setBlockMetadataAndTileEntityWithoutUpdate(int x, int y, int z, int id, int md, TileEntity par4TileEntity, boolean updateLighting) {
+	public static boolean setBlockMetadataAndTileEntityWithoutUpdate(World world, int x, int y, int z, int id, int md, TileEntity par4TileEntity,
+			boolean updateLighting) {
 		if (x < -30000000 || z < -30000000 || x >= 30000000 || z >= 30000000 || y < 0 || y >= 256)
 			return false;
 
@@ -182,7 +152,7 @@ public class WorldUtils {
 		 * (par4TileEntity != null) { par4TileEntity.validate(); } return
 		 * result; }
 		 */
-		final Chunk chunk = this.world.getChunkFromChunkCoords(x >> 4, z >> 4);
+		final Chunk chunk = world.getChunkFromChunkCoords(x >> 4, z >> 4);
 		final boolean result = setChunkBlockIDWithMetadata(chunk, x & 15, y, z & 15, id, md);
 
 		/*
@@ -215,7 +185,7 @@ public class WorldUtils {
 		return result;
 	}
 
-	public boolean setChunkBlockIDWithMetadata(Chunk chunk, int x, int y, int z, int newBid, int newMd) {
+	public static boolean setChunkBlockIDWithMetadata(Chunk chunk, int x, int y, int z, int newBid, int newMd) {
 		final int mapIndex = z << 4 | x;
 
 		if (y >= chunk.precipitationHeightMap[mapIndex] - 1) {
@@ -250,13 +220,14 @@ public class WorldUtils {
 			if (newBid == 0)
 				return false;
 
-			ebs = storageArrays[y >> 4] = new ExtendedBlockStorage(y >> 4 << 4, !this.world.provider.hasNoSky);
+			ebs = storageArrays[y >> 4] = new ExtendedBlockStorage(y >> 4 << 4, !chunk.worldObj.provider.hasNoSky);
 			isHigherThanCurrentHeightMap = y >= currentHeightMapAtLocation;
 		}
 
-/*		final int worldRelativeX = chunk.xPosition * 16 + x;
-		final int worldRelativeZ = chunk.zPosition * 16 + z;
-*/
+		/*
+		 * final int worldRelativeX = chunk.xPosition * 16 + x; final int
+		 * worldRelativeZ = chunk.zPosition * 16 + z;
+		 */
 		// if (bid != 0 && !world.isRemote)
 		// {
 		// Block.blocksList[bid].onSetBlockIDWithMetaData(this.worldObj,
@@ -327,7 +298,7 @@ public class WorldUtils {
 	}
 
 	@SuppressWarnings({ "unchecked" })
-	private void setChunkBlockTileEntityWithoutUpdate(Chunk chunk, int par1, int par2, int par3, TileEntity par4TileEntity) {
+	private static void setChunkBlockTileEntityWithoutUpdate(Chunk chunk, int par1, int par2, int par3, TileEntity par4TileEntity) {
 		final ChunkPosition chunkposition = new ChunkPosition(par1, par2, par3);
 		if (par4TileEntity == null) {
 			chunk.chunkTileEntityMap.remove(chunkposition);
@@ -351,6 +322,37 @@ public class WorldUtils {
 		 */
 		chunk.chunkTileEntityMap.put(chunkposition, par4TileEntity);
 		// }
+	}
+
+	public World world;
+
+	public WorldUtils(World world) {
+		this.world = world;
+		if (!world.isRemote) {
+			if (pendingTickListEntries == null) {
+				final WorldServer server = (WorldServer) world;
+				pendingTickListEntries = (TreeSet<?>) PrivateFieldAccess.getValue(server, Obfuscation.getSrgName("pendingTickListEntriesTreeSet"));
+				// Obfuscation.getFieldName("net.minecraft.world.Server",
+				// "pendingTickListEntriesTreeSet", "Ljava/util/Set;"));
+				pendingTickListEntriesSet = (Set<?>) PrivateFieldAccess.getValue(server, Obfuscation.getSrgName("pendingTickListEntriesHashSet"));
+				// Obfuscation.getFieldName("net.minecraft.world.Server",
+				// "pendingTickListEntriesHashSet", "Ljava/util/HashSet;"));
+			}
+		}
+	}
+
+	public void removeBlockScheduledUpdate(World world, Vector3i block) {
+		if (!world.isRemote && pendingTickListEntries != null) {
+			final Iterator<?> iterator = pendingTickListEntries.iterator();
+			while (iterator.hasNext()) {
+				final NextTickListEntry entry = (NextTickListEntry) iterator.next();
+				if (entry.xCoord == block.x && entry.yCoord == block.y && entry.zCoord == block.z) {
+					pendingTickListEntries.remove(entry);
+					pendingTickListEntriesSet.remove(entry);
+					return;
+				}
+			}
+		}
 	}
 
 	public void setNextBlockUpdate(Vector3i position, int blockId, long blockNextUpdate) {

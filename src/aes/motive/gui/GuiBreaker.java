@@ -1,6 +1,5 @@
 package aes.motive.gui;
 
-
 public class GuiBreaker extends GuiDialog {
 
 	@Override

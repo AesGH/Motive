@@ -1,21 +1,40 @@
 package aes.motive.test;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockBed;
+import net.minecraft.block.BlockCactus;
+import net.minecraft.block.BlockCocoa;
+import net.minecraft.block.BlockCrops;
+import net.minecraft.block.BlockDeadBush;
+import net.minecraft.block.BlockDoor;
+import net.minecraft.block.BlockLadder;
+import net.minecraft.block.BlockLeaves;
+import net.minecraft.block.BlockLever;
+import net.minecraft.block.BlockLilyPad;
+import net.minecraft.block.BlockNetherStalk;
+import net.minecraft.block.BlockReed;
+import net.minecraft.block.BlockStem;
+import net.minecraft.block.BlockTrapDoor;
+import net.minecraft.block.BlockVine;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
+import net.minecraft.item.ItemDoor;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.CraftingManager;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.tileentity.TileEntitySign;
 import net.minecraft.world.World;
 import net.minecraftforge.common.ForgeDirection;
+import net.minecraftforge.oredict.OreDictionary;
 import aes.motive.Command;
 import aes.motive.Motive;
 import aes.motive.item.ItemMoverRemoteControl;
@@ -38,16 +57,18 @@ public class TestCommand extends Command {
 	protected TileEntityMover addPairedEngine(final Vector3i engineLocation) {
 		set(engineLocation, Motive.BlockMover.blockID);
 
-		final Vector3i powerLocation = engineLocation.increment(ForgeDirection.WEST);
-		set(powerLocation, Block.blockRedstone.blockID);
+		// final Vector3i powerLocation =
+		// engineLocation.increment(ForgeDirection.WEST);
+		// set(powerLocation, Block.blockRedstone.blockID);
 
-		set(powerLocation.increment(ForgeDirection.UP), Block.redstoneLampActive.blockID);
-		set(engineLocation.increment(ForgeDirection.SOUTH, 2), Block.enderChest.blockID);
-		set(this.playerLocation.increment(ForgeDirection.SOUTH, 2), Block.enderChest.blockID);
+		// set(powerLocation.increment(ForgeDirection.UP),
+		// Block.redstoneLampActive.blockID);
 
 		final TileEntityMover tileEntityMover = (TileEntityMover) this.world.getBlockTileEntity(engineLocation.x, engineLocation.y, engineLocation.z);
+		tileEntityMover.setMode(MoverMode.Remote);
 		tileEntityMover.setLocked(true);
 		tileEntityMover.setSpeed(0.5f);
+		tileEntityMover.setActive(true);
 		final ItemStack stack = new ItemStack(Motive.ItemMoverRemoteControl);
 		this.player.inventory.setInventorySlotContents(0, stack);
 		ItemMoverRemoteControl.pairWithMover(stack, tileEntityMover);
@@ -98,7 +119,7 @@ public class TestCommand extends Command {
 	@Override
 	public String getCommandUsage(ICommandSender icommandsender) {
 		String usage = "Usage:\n";
-		usage += "/" + name + " test clear [size]" + "\n";
+		// usage += "/" + name + " test clear [size]" + "\n";
 		usage += "/" + name + " test miner [size]" + "\n";
 		usage += "/" + name + " test allblocks" + "\n";
 		usage += "/" + name + " options breakerWithoutInventoryAvailable <drop|destroy|wait>\n";
@@ -221,6 +242,7 @@ public class TestCommand extends Command {
 				}
 			}
 		}
+		sendChat(this.sender, "Done");
 	}
 
 	private void set(Vector3i location, int blockId) {
@@ -228,7 +250,64 @@ public class TestCommand extends Command {
 	}
 
 	private void set(Vector3i location, int blockId, int meta) {
-		this.world.setBlock(location.x, location.y, location.z, blockId, meta, 3);
+		set(location, blockId, meta, true);
+	}
+
+	private void set(Vector3i location, int blockId, int meta, boolean update) {
+		if (this.world.getBlockId(location.x, location.y, location.z) != blockId || this.world.getBlockMetadata(location.x, location.y, location.z) != meta) {
+			WorldUtils.setBlockMetadataAndTileEntityWithoutUpdate(this.world, location.x, location.y, location.z, blockId, meta, null, true);
+			if (update) {
+				this.world.markBlockForUpdate(location.x, location.y, location.z);
+			}
+		}
+		// this.world.setBlock(location.x, location.y, location.z, blockId,
+		// meta, 3);
+	}
+
+	private void setRandomOres(Vector3i start, ForgeDirection eastWestDirection, int eastWestDistance, ForgeDirection northSouthDirection,
+			int northSouthDistance, int height) {
+
+		final List<KnownBlock> ores = new ArrayList<KnownBlock>();
+
+		for (final String oreName : OreDictionary.getOreNames()) {
+			if (oreName.startsWith("ore")) {
+				for (final ItemStack stack : OreDictionary.getOres(oreName)) {
+					if (stack.itemID > 0 && stack.itemID < Block.blocksList.length) {
+						final Block block = Block.blocksList[stack.itemID];
+						if (block != null) {
+							final int metadata = stack.getItemDamage();
+							ores.add(new KnownBlock(block, metadata));
+						}
+					}
+				}
+			}
+		}
+
+		ores.add(new KnownBlock(Block.coalBlock, 0));
+		ores.add(new KnownBlock(Block.cobblestone, 0));
+		ores.add(new KnownBlock(Block.stone, 0));
+		ores.add(new KnownBlock(Block.dirt, 0));
+		ores.add(new KnownBlock(Block.gravel, 0));
+		ores.add(new KnownBlock(Block.obsidian, 0));
+		ores.add(new KnownBlock(Block.sandStone, 0));
+
+		sendChat(this.sender, "Setting " + eastWestDistance + " " + eastWestDirection.name() + " and " + northSouthDistance + " " + northSouthDirection.name()
+				+ " and " + height + " UP from " + start + " to random ores");
+
+		final Vector3i end = start.increment(eastWestDirection, eastWestDistance).increment(northSouthDirection, northSouthDistance)
+				.increment(ForgeDirection.UP, height);
+
+		final Random random = new Random();
+
+		for (int x = start.x; x != end.x; x += eastWestDirection.offsetX) {
+			for (int z = start.z; z != end.z; z += northSouthDirection.offsetZ) {
+				for (int y = start.y; y != end.y && y > 0 && y < 256; y += ForgeDirection.UP.offsetY) {
+					final KnownBlock ore = ores.get(random.nextInt(ores.size()));
+					set(new Vector3i(x, y, z), ore.block.blockID, ore.metadata);
+				}
+			}
+		}
+		sendChat(this.sender, "Done");
 	}
 
 	private void testAllKnownBlocks() {
@@ -236,21 +315,23 @@ public class TestCommand extends Command {
 
 		final int gridCount = (int) Math.ceil(Math.sqrt(knownBlocks.size()));
 
-		final int gridSizeNS = gridCount * 3 + 2;
+		final int gridSizeNS = gridCount * 3;
 
-		clear(this.playerLocation.increment(ForgeDirection.DOWN, 3).increment(ForgeDirection.WEST, 10).increment(ForgeDirection.NORTH, 10),
-				ForgeDirection.EAST, gridCount + 40, ForgeDirection.SOUTH, gridSizeNS + 40, 255);
+		clear(this.playerLocation.increment(ForgeDirection.DOWN, 1).increment(ForgeDirection.WEST, 5).increment(ForgeDirection.NORTH, 3), ForgeDirection.EAST,
+				gridCount + 10, ForgeDirection.SOUTH, gridSizeNS + 10, 255);
 
-		final Vector3i platformStart = this.playerLocation.increment(ForgeDirection.UP, 1).increment(ForgeDirection.EAST, 10)
-				.increment(ForgeDirection.SOUTH, 10);
+		final Vector3i platformStart = this.playerLocation.increment(ForgeDirection.UP, 2).increment(ForgeDirection.EAST, 2).increment(ForgeDirection.SOUTH, 2);
 
-		set(platformStart, ForgeDirection.EAST, gridCount, ForgeDirection.SOUTH, gridSizeNS, 3, Block.dirt.blockID);
+		set(platformStart, ForgeDirection.EAST, gridCount + 2, ForgeDirection.SOUTH, gridSizeNS + 2, 1, Block.dirt.blockID);
 
 		final Vector3i arrayStart = platformStart.increment(ForgeDirection.UP).increment(ForgeDirection.EAST).increment(ForgeDirection.SOUTH);
-		set(arrayStart, ForgeDirection.EAST, gridCount - 2, ForgeDirection.SOUTH, gridSizeNS - 2, 2, 0);
+		// set(arrayStart, ForgeDirection.EAST, gridCount, ForgeDirection.SOUTH,
+		// gridSizeNS, 2, 0);
 
-		final Vector3i end = arrayStart.increment(ForgeDirection.EAST, gridCount - 3).increment(ForgeDirection.SOUTH, gridSizeNS - 3)
-				.increment(ForgeDirection.UP, 1);
+		// arrayStart =
+		// arrayStart.increment(ForgeDirection.EAST).increment(ForgeDirection.SOUTH);
+
+		final Vector3i end = arrayStart.increment(ForgeDirection.EAST, gridCount).increment(ForgeDirection.SOUTH, gridSizeNS).increment(ForgeDirection.UP, 1);
 
 		int index = 0;
 
@@ -259,7 +340,7 @@ public class TestCommand extends Command {
 			// if (x % 3 == 0)
 			{
 				for (int z = arrayStart.z; z != end.z; z += ForgeDirection.SOUTH.offsetZ) {
-					if (z % 3 == 0) {
+					if ((z - arrayStart.z) % 3 == 0) {
 						final int y = arrayStart.y;
 						while (true) {
 							index++;
@@ -271,7 +352,57 @@ public class TestCommand extends Command {
 
 							Motive.log("setting " + x + "," + y + "," + z + " to " + block.getLocalizedName());
 							final Vector3i location = new Vector3i(x, y, z);
-							set(location, block.blockID, recipe.metadata);
+
+							if (block == Block.fire) {
+								set(location, Block.dirt.blockID, 0);
+								set(location.increment(ForgeDirection.UP), Block.dirt.blockID, 0);
+								set(location.increment(ForgeDirection.UP, 2), Block.netherrack.blockID, 0);
+								set(location.increment(ForgeDirection.UP, 3), block.blockID, recipe.metadata);
+							} else if (block instanceof BlockDoor) {
+								ItemDoor.placeDoorBlock(this.world, x, y, z, 0, block);
+							} else if (block instanceof BlockBed) {
+								set(location, recipe.block.blockID, 2);
+								set(location.increment(ForgeDirection.NORTH), recipe.block.blockID, 10);
+							} else if (block instanceof BlockLever) {
+								set(location, recipe.block.blockID, 1);
+							} else if (block instanceof BlockTrapDoor) {
+								set(location.increment(ForgeDirection.DOWN), 0, 0);
+								set(location, block.blockID, recipe.metadata);
+							} else if (block instanceof BlockLilyPad) {
+								set(location.increment(ForgeDirection.DOWN, 2), Block.dirt.blockID, 0);
+								set(location.increment(ForgeDirection.DOWN), Block.waterStill.blockID, 0);
+								set(location, block.blockID, recipe.metadata);
+							} else if (block instanceof BlockReed || block instanceof BlockCactus || block instanceof BlockDeadBush) {
+								set(location, Block.sand.blockID, 0);
+								set(location.increment(ForgeDirection.UP), block.blockID, recipe.metadata);
+							} else if (block instanceof BlockNetherStalk) {
+								set(location, Block.slowSand.blockID, 0);
+								set(location.increment(ForgeDirection.UP), block.blockID, recipe.metadata);
+							} else if (block instanceof BlockLeaves) {
+								set(location, Block.wood.blockID, 0);
+								set(location.increment(ForgeDirection.UP), block.blockID, recipe.metadata);
+							} else if (block instanceof BlockCocoa) {
+								set(location, Block.wood.blockID, 3);
+								set(location.increment(ForgeDirection.NORTH), block.blockID, recipe.metadata);
+							} else if (block instanceof BlockStem) {
+								set(location.increment(ForgeDirection.DOWN), Block.tilledField.blockID, 0);
+								set(location, block.blockID, recipe.metadata);
+							} else if (block instanceof BlockCrops) {
+								set(location.increment(ForgeDirection.DOWN), Block.tilledField.blockID, 0);
+								set(location, block.blockID, recipe.metadata);
+							} else if (block instanceof BlockLadder) {
+								set(location, Block.dirt.blockID, 0);
+								set(location.increment(ForgeDirection.UP), Block.wood.blockID, 0);
+								set(location.increment(ForgeDirection.UP, 1).increment(ForgeDirection.SOUTH), block.blockID, 3);
+								set(location.increment(ForgeDirection.UP, 1).increment(ForgeDirection.NORTH), block.blockID, 2);
+							} else if (block instanceof BlockVine) {
+								set(location, Block.dirt.blockID, 0);
+								set(location.increment(ForgeDirection.UP), Block.wood.blockID, 0);
+								set(location.increment(ForgeDirection.UP, 1).increment(ForgeDirection.SOUTH), block.blockID, 4);
+								set(location.increment(ForgeDirection.UP, 1).increment(ForgeDirection.NORTH), block.blockID, 1);
+							} else {
+								set(location, block.blockID, recipe.metadata);
+							}
 
 							set(location.increment(ForgeDirection.SOUTH), Block.signPost.blockID);
 							final TileEntitySign sign = (TileEntitySign) this.world.getBlockTileEntity(x, y, z + 1);
@@ -301,7 +432,7 @@ public class TestCommand extends Command {
 			}
 		}
 
-		final Vector3i engineLocation = platformStart.increment(ForgeDirection.WEST).increment(ForgeDirection.UP);
+		final Vector3i engineLocation = platformStart.increment(ForgeDirection.WEST);
 		set(engineLocation, Motive.BlockMover.blockID);
 
 		final Vector3i powerLocation = engineLocation.increment(ForgeDirection.WEST);
@@ -326,12 +457,16 @@ public class TestCommand extends Command {
 
 	protected void testBoat() {
 		final int areaSize = 10;
-		clear(this.playerLocation.increment(ForgeDirection.DOWN, 3).increment(ForgeDirection.WEST, 10).increment(ForgeDirection.NORTH, 10),
-				ForgeDirection.EAST, areaSize + 40, ForgeDirection.SOUTH, areaSize + 40, 255);
+		clear(this.playerLocation.increment(ForgeDirection.DOWN).increment(ForgeDirection.WEST, 40).increment(ForgeDirection.NORTH, 40), ForgeDirection.EAST,
+				areaSize + 80, ForgeDirection.SOUTH, areaSize + 80, 255);
+
+		set(this.playerLocation.increment(ForgeDirection.DOWN).increment(ForgeDirection.WEST, 40).increment(ForgeDirection.NORTH, 40), ForgeDirection.EAST,
+				areaSize + 80, ForgeDirection.SOUTH, areaSize + 80, 3, Block.waterStill.blockID);
 
 		final Vector3i start = this.playerLocation.increment(ForgeDirection.EAST, 10).increment(ForgeDirection.SOUTH, 10);
 
-		set(start, ForgeDirection.EAST, 4, ForgeDirection.SOUTH, 3, 1, Block.planks.blockID);
+		// set(start, ForgeDirection.EAST, 4, ForgeDirection.SOUTH, 3, 1,
+		// Block.planks.blockID);
 
 		final Vector3i level2 = start.increment(ForgeDirection.UP).increment(ForgeDirection.WEST);
 		set(level2, ForgeDirection.EAST, 6, ForgeDirection.SOUTH, 3, 1, Block.planks.blockID);
@@ -439,7 +574,7 @@ public class TestCommand extends Command {
 	protected void testMiner(int sizeOfBreakerGrid) {
 		final int areaSize = Math.max(80, sizeOfBreakerGrid + 10);
 
-		clear(this.playerLocation.increment(ForgeDirection.DOWN, 3).increment(ForgeDirection.WEST, 10).increment(ForgeDirection.NORTH, 10),
+		clear(this.playerLocation.increment(ForgeDirection.DOWN, 1).increment(ForgeDirection.WEST, 10).increment(ForgeDirection.NORTH, 10),
 				ForgeDirection.EAST, areaSize + 40, ForgeDirection.SOUTH, areaSize + 40, 255);
 
 		final Vector3i platformStart = this.playerLocation.increment(ForgeDirection.UP, 1).increment(ForgeDirection.EAST, 10)
@@ -448,10 +583,15 @@ public class TestCommand extends Command {
 		set(platformStart, ForgeDirection.EAST, 1, ForgeDirection.SOUTH, sizeOfBreakerGrid, sizeOfBreakerGrid, Motive.BlockBreaker.blockID,
 				ForgeDirection.EAST.ordinal());
 
-		set(platformStart.increment(ForgeDirection.EAST, 5).increment(ForgeDirection.DOWN, 2).increment(ForgeDirection.NORTH, 2), ForgeDirection.EAST, 20,
-				ForgeDirection.SOUTH, sizeOfBreakerGrid + 4, sizeOfBreakerGrid + 4, Block.blockDiamond.blockID);
+		setRandomOres(platformStart.increment(ForgeDirection.EAST, 5).increment(ForgeDirection.DOWN, 2).increment(ForgeDirection.NORTH, 2),
+				ForgeDirection.EAST, 20, ForgeDirection.SOUTH, sizeOfBreakerGrid + 4, sizeOfBreakerGrid + 4);
 
 		final Vector3i engineLocation = platformStart.increment(ForgeDirection.WEST).increment(ForgeDirection.UP);
+		set(engineLocation.increment(ForgeDirection.SOUTH, 2), Block.enderChest.blockID);
+		set(this.playerLocation.increment(ForgeDirection.SOUTH, 2), Block.enderChest.blockID);
+
 		addPairedEngine(engineLocation);
+
 	}
+
 }

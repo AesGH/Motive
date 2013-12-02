@@ -26,6 +26,7 @@ public class ModelMoverRemoteControl extends ModelMotiveBase {
 	private final ModelRenderer arrow;
 
 	float textWidth = 115f;
+
 	public ModelMoverRemoteControl() {
 		super();
 		this.outline = new ModelRenderer(this, 0, 0);

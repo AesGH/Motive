@@ -123,10 +123,15 @@ public class Transformer implements IClassTransformer {
 		public void transform(ClassNode classNode, MethodNode methodNode) {
 			final LabelNode beforeReturnLabel = new LabelNode();
 
+			boolean skippedFirstReturn = false;
 			final ListIterator<AbstractInsnNode> iter = methodNode.instructions.iterator();
 			while (iter.hasNext()) {
 				final AbstractInsnNode targetNode = iter.next();
 				if (targetNode.getOpcode() == IRETURN) {
+					if (!skippedFirstReturn) {
+						skippedFirstReturn = true;
+						continue;
+					}
 					methodNode.instructions.insertBefore(targetNode, new JumpInsnNode(GOTO, beforeReturnLabel));
 					methodNode.instructions.remove(targetNode);
 				}
@@ -253,7 +258,7 @@ public class Transformer implements IClassTransformer {
 			LabelNode jumpTarget = null;
 			final ListIterator<AbstractInsnNode> iter = methodNode.instructions.iterator();
 			while (iter.hasNext()) {
-				AbstractInsnNode targetNode = iter.next();
+				final AbstractInsnNode targetNode = iter.next();
 				if (targetNode.getOpcode() == Opcodes.IFNE) {
 					final JumpInsnNode jumpInsnNode = (JumpInsnNode) targetNode;
 					jumpTarget = jumpInsnNode.label;
@@ -269,9 +274,9 @@ public class Transformer implements IClassTransformer {
 			final InsnList ins = prepareForRenderHookCall();
 			ins.add(new VarInsnNode(ALOAD, 10));
 			ins.add(renderHookCall("worldRendererContainsMovingBlocks", "(Lnet/minecraft/client/renderer/WorldRenderer;)Z"));
-			
+
 			ins.add(new JumpInsnNode(Opcodes.IFNE, jumpTarget));
-			
+
 			methodNode.instructions.insertBefore(insertLocation, ins);
 		}
 	}
