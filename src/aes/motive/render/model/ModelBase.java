@@ -1,17 +1,20 @@
 package aes.motive.render.model;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.model.ModelRenderer;
+import net.minecraft.client.renderer.GLAllocation;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ResourceLocation;
 
 import org.lwjgl.opengl.GL11;
 
+import aes.base.TileEntityBase;
 import aes.utils.Vector3d;
 
 public class ModelBase extends net.minecraft.client.model.ModelBase {
@@ -21,6 +24,9 @@ public class ModelBase extends net.minecraft.client.model.ModelBase {
 	private double zOffset;
 	private double uOffset;
 	private double vOffset;
+	private double uvScale;
+
+	static Map<String, Integer> cachedDisplayLists = new HashMap<String, Integer>();
 
 	public ModelBase() {
 		this.textureWidth = 512;
@@ -37,12 +43,12 @@ public class ModelBase extends net.minecraft.client.model.ModelBase {
 		addVertexWithUV(b.x, b.y, b.z, uB, vB);
 		addVertexWithUV(c.x, c.y, c.z, uC, vC);
 		addVertexWithUV(d.x, d.y, d.z, uD, vD);
-	}
+	};
 
 	private void addVertexWithUV(double x, double y, double z, double u, double v) {
 		this.tessellator.addVertexWithUV(pxTexture(x + this.xOffset), pxTexture(y + this.yOffset), pxTexture(z + this.zOffset), pxVertex(u + this.uOffset),
 				pxVertex(v + this.vOffset));
-	};
+	}
 
 	protected void draw() {
 		this.tessellator.draw();
@@ -52,12 +58,16 @@ public class ModelBase extends net.minecraft.client.model.ModelBase {
 		return Minecraft.getMinecraft().fontRenderer;
 	}
 
+	protected String getRenderCacheKey(TileEntity tileEntity, ItemStack stack) {
+		return ((TileEntityBase) tileEntity).getRenderCacheKey();
+	}
+
 	private double pxTexture(double i) {
-		return i / 128D;
+		return i / this.uvScale;
 	}
 
 	private double pxVertex(double i) {
-		return i / 128D;
+		return i / this.uvScale;
 	}
 
 	@Override
@@ -73,39 +83,36 @@ public class ModelBase extends net.minecraft.client.model.ModelBase {
 		this.tessellator = Tessellator.instance;
 		GL11.glScalef(scale, scale, scale);
 
-		/*
-		 * // this.displayList = -1; if (++count > 100 && ( this instanceof
-		 * ModelMote || this instanceof ModelVe || this instanceof
-		 * ModelMoverRemoteControl || this instanceof ModelMover || this
-		 * instanceof ModelBreaker)) { // Motive.log("rendering " +
-		 * this.getClass().getName()); if (this.displayList == -1) {
-		 * Motive.log("generating call list"); this.displayList =
-		 * GLAllocation.generateDisplayLists(1);
-		 * GL11.glNewList(this.displayList, GL11.GL_COMPILE);
-		 * renderModel(tileEntity, stack, partialTickTime); GL11.glEndList();
-		 * Motive.log("generated call list"); } // Motive.log("calling list");
-		 * GL11.glCallList(this.displayList); // Motive.log("called list"); }
-		 * else
-		 */renderModel(tileEntity, stack, partialTickTime);
+		boolean cached = false;
 
-		if (GuiScreen.isShiftKeyDown()) {
-			GL11.glDisable(GL11.GL_TEXTURE_2D);
-			// z- face
+		if (tileEntity instanceof TileEntityBase) {
+			final String key = getRenderCacheKey(tileEntity, stack);
 
-			startDrawing();
-			this.tessellator.setColorRGBA(0xff, 0, 0, 0x20);
+			if (key != null) {
+				int displayList;
+				if (cachedDisplayLists.containsKey(key)) {
+					displayList = cachedDisplayLists.get(key);
+				} else {
+					displayList = GLAllocation.generateDisplayLists(1);
+					GL11.glNewList(displayList, GL11.GL_COMPILE);
+					renderModel(tileEntity, stack, partialTickTime);
+					GL11.glEndList();
+					cachedDisplayLists.put(key, displayList);
+				}
+				/*
+				 * if ( //++count > 100 && (this instanceof ModelMote || this
+				 * instanceof ModelVe || this instanceof ModelMoverRemoteControl
+				 * || this instanceof ModelMover || this instanceof
+				 * ModelBreaker)) { Motive.log("rendering " + }
+				 * this.getClass().getName());
+				 */
+				GL11.glCallList(displayList);
+				cached = true;
+			}
+		}
 
-			addQuadWithUV(new Vector3d(0, 0, 0), 0, 0, new Vector3d(0, 1, 0), 1, 0, new Vector3d(1, 1, 0), 1, 1, new Vector3d(1, 0, 0), 0, 1);
-
-			addQuadWithUV(new Vector3d(0, 0, 0), 0, 0, new Vector3d(1, 0, 0), 1, 0, new Vector3d(1, 1, 0), 1, 1, new Vector3d(0, 1, 0), 0, 1);
-			draw();
-			startDrawing();
-			this.tessellator.setColorRGBA(0xff, 0xff, 0, 0x20);
-			addQuadWithUV(new Vector3d(0, 0, 1), 0, 0, new Vector3d(1, 0, 1), 1, 0, new Vector3d(1, 1, 1), 1, 1, new Vector3d(0, 1, 1), 0, 1);
-
-			addQuadWithUV(new Vector3d(0, 0, 1), 0, 0, new Vector3d(0, 1, 1), 1, 0, new Vector3d(1, 1, 1), 1, 1, new Vector3d(1, 0, 1), 0, 1);
-			draw();
-			GL11.glEnable(GL11.GL_TEXTURE_2D);
+		if (!cached) {
+			renderModel(tileEntity, stack, partialTickTime);
 		}
 	}
 
@@ -130,22 +137,18 @@ public class ModelBase extends net.minecraft.client.model.ModelBase {
 	}
 
 	protected void setUVOffset(double uOffset, double vOffset) {
+		setUVOffset(uOffset, vOffset, 128);
+	}
+
+	protected void setUVOffset(double uOffset, double vOffset, double uvScale) {
 		this.uOffset = uOffset;
 		this.vOffset = vOffset;
+		this.uvScale = uvScale;
 	}
 
 	protected void setVertexOffset(double xOffset, double yOffset, double zOffset) {
 		this.xOffset = xOffset;
 		this.yOffset = yOffset;
 		this.zOffset = zOffset;
-	}
-
-	protected void startDrawing() {
-		this.tessellator.startDrawingQuads();
-		// this.tessellator.setBrightness(0xff);
-	}
-
-	protected void texture(ResourceLocation resource) {
-		Minecraft.getMinecraft().renderEngine.bindTexture(resource);
 	}
 }

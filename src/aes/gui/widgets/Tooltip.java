@@ -3,7 +3,7 @@ package aes.gui.widgets;
 import net.minecraft.client.Minecraft;
 import aes.gui.core.BasicScreen;
 import aes.gui.widgets.base.Widget;
-import aes.motive.gui.Resources;
+import aes.motive.Texture;
 
 public class Tooltip extends Widget {
 
@@ -37,7 +37,7 @@ public class Tooltip extends Widget {
 	 */
 	@Override
 	public void draw(int mx, int my) {
-		Resources.tooltipBackground.draw(this.x, this.y, this.zLevel - 1, this.width, this.height);
+		Texture.tooltipBackground.draw(this.x, this.y, this.zLevel - 1, this.width, this.height);
 		fontRenderer.drawString(this.str, (int) (this.x + marginX), (int) (this.y + marginY), this.txtColor);
 	}
 

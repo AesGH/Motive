@@ -16,8 +16,8 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 public class BlockBase extends BlockContainer {
-	public static ForgeDirection getFacing(World worldObj, int x, int y, int z) {
-		return ForgeDirection.getOrientation(worldObj.getBlockMetadata(x, y, z));
+	public static ForgeDirection getFacing(IBlockAccess blockAccess, int x, int y, int z) {
+		return ForgeDirection.getOrientation(blockAccess.getBlockMetadata(x, y, z));
 	}
 
 	public static void setFacing(World worldObj, int x, int y, int z, ForgeDirection facing) {
@@ -82,9 +82,24 @@ public class BlockBase extends BlockContainer {
 		return false;
 	}
 
+	protected void notifyTileEntityNeighboursChanged(World par1World, int par2, int par3, int par4) {
+		final TileEntityBase tileEntity = (TileEntityBase) par1World.getBlockTileEntity(par2, par3, par4);
+
+		if (tileEntity != null) {
+			tileEntity.onBlockNeighborChange();
+		}
+	}
+
+	@Override
+	public void onBlockAdded(World par1World, int par2, int par3, int par4) {
+		super.onBlockAdded(par1World, par2, par3, par4);
+		notifyTileEntityNeighboursChanged(par1World, par2, par3, par4);
+	}
+
 	@Override
 	public void onBlockPlacedBy(World par1World, int x, int y, int z, EntityLivingBase par5EntityLivingBase, ItemStack par6ItemStack) {
 		setFacing(par1World, x, y, z, ForgeDirection.getOrientation(BlockPistonBase.determineOrientation(par1World, x, y, z, par5EntityLivingBase)));
+		notifyTileEntityNeighboursChanged(par1World, x, y, z);
 	}
 
 	/**
@@ -95,11 +110,7 @@ public class BlockBase extends BlockContainer {
 	@Override
 	public void onNeighborBlockChange(World par1World, int par2, int par3, int par4, int par5) {
 		super.onNeighborBlockChange(par1World, par2, par3, par4, par5);
-		final TileEntityBase tileEntity = (TileEntityBase) par1World.getBlockTileEntity(par2, par3, par4);
-
-		if (tileEntity != null) {
-			tileEntity.onBlockNeighborChange();
-		}
+		notifyTileEntityNeighboursChanged(par1World, par2, par3, par4);
 	}
 
 	@Override

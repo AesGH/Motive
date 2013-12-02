@@ -7,7 +7,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.command.ServerCommandManager;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 import net.minecraftforge.common.Configuration;
 import aes.motive.block.BlockBreaker;
@@ -50,19 +49,6 @@ public class Motive {
 	public static Block BlockBreaker;
 
 	public static Item ItemMoverRemoteControl;
-
-	public static ResourceLocation resourceMoverTexture = new ResourceLocation("motive", "textures/blocks/mover.png");
-	public static ResourceLocation resourceMoteTexture = new ResourceLocation("motive", "textures/blocks/mote.png");
-	public static ResourceLocation resourcePairedMoteTexture = new ResourceLocation("motive", "textures/blocks/pairedMote.png");
-	public static ResourceLocation resourceStrutTexture = new ResourceLocation("motive", "textures/blocks/strut.png");
-	public static ResourceLocation resourceGlassCaseTexture = new ResourceLocation("motive", "textures/blocks/glassCase.png");
-	public static ResourceLocation resourceFrontCaseTexture = new ResourceLocation("motive", "textures/blocks/veFrame.png");
-	public static ResourceLocation resourceBreakerTexture = new ResourceLocation("motive", "textures/blocks/breakerFront.png");
-	public static ResourceLocation resourceRemoteControlTexture = new ResourceLocation("motive", "textures/items/moverRemoteIcon.png");
-	public static ResourceLocation resourceBoltedFrameTexture = new ResourceLocation("motive", "textures/blocks/boltedFrame.png");
-	public static ResourceLocation resourceMoverIconTexture = new ResourceLocation("motive", "textures/blocks/moverIcon.png");
-	public static ResourceLocation textureUiBackground = new ResourceLocation("motive", "textures/gui/background.png");
-
 	private static final Logger logger = Logger.getLogger(Motive.class.getName());
 
 	public static void log(String message) {

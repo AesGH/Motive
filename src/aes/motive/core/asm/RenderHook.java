@@ -591,7 +591,8 @@ public class RenderHook {
 	public boolean worldRendererContainsMovingBlocks(WorldRenderer worldrenderer) {
 		// worldrenderer.worldObj.theProfiler.startSection("checkContainsMoving");
 		for (final TileEntityMoverBase tileEntityMoverBase : TileEntityMoverBase.getMovers(worldrenderer.worldObj).values()) {
-			if (tileEntityMoverBase.moving && tileEntityMoverBase.getAffectedWorldRenderers().contains(worldrenderer))
+			if (tileEntityMoverBase.moving && tileEntityMoverBase.getForcingSimultaneousRenderering()
+					&& tileEntityMoverBase.getAffectedWorldRenderers().contains(worldrenderer))
 				// worldrenderer.worldObj.theProfiler.endSection();
 				return true;
 		}

@@ -3,7 +3,7 @@ package aes.motive;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import aes.motive.gui.GuiHandlerMover;
+import aes.motive.gui.GuiHandler;
 import aes.motive.tileentity.TileEntityBreaker;
 import aes.motive.tileentity.TileEntityMote;
 import aes.motive.tileentity.TileEntityMover;
@@ -36,7 +36,7 @@ public class ProxyServer {
 	}
 
 	public void registerGuis() {
-		NetworkRegistry.instance().registerGuiHandler(Motive.instance, new GuiHandlerMover());
+		NetworkRegistry.instance().registerGuiHandler(Motive.instance, new GuiHandler());
 	}
 
 	public void registerItems() {

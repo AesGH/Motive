@@ -255,13 +255,13 @@ public class TestCommand extends Command {
 
 	private void set(Vector3i location, int blockId, int meta, boolean update) {
 		if (this.world.getBlockId(location.x, location.y, location.z) != blockId || this.world.getBlockMetadata(location.x, location.y, location.z) != meta) {
-			WorldUtils.setBlockMetadataAndTileEntityWithoutUpdate(this.world, location.x, location.y, location.z, blockId, meta, null, true);
-			if (update) {
-				this.world.markBlockForUpdate(location.x, location.y, location.z);
-			}
-		}
-		// this.world.setBlock(location.x, location.y, location.z, blockId,
-		// meta, 3);
+			this.world.setBlock(location.x, location.y, location.z, blockId, meta, 3);
+			/*
+			 * WorldUtils.setBlockMetadataAndTileEntityWithoutUpdate(this.world,
+			 * location.x, location.y, location.z, blockId, meta, null, true);
+			 * if (update) { this.world.markBlockForUpdate(location.x,
+			 * location.y, location.z); }
+			 */}
 	}
 
 	private void setRandomOres(Vector3i start, ForgeDirection eastWestDirection, int eastWestDistance, ForgeDirection northSouthDirection,

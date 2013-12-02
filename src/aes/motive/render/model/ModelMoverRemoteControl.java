@@ -4,17 +4,16 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityClientPlayerMP;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.model.ModelRenderer;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Vec3;
 
 import org.lwjgl.opengl.GL11;
 
 import aes.motive.FontUtils;
 import aes.motive.Motive;
+import aes.motive.Texture;
 import aes.motive.item.ItemMoverRemoteControl;
 import aes.motive.tileentity.MoverMode;
 import aes.motive.tileentity.TileEntityMover;
@@ -70,26 +69,19 @@ public class ModelMoverRemoteControl extends ModelMotiveBase {
 	protected void drawArrowTo(final TileEntityMover tileEntityMoverPairedTo, EntityClientPlayerMP thePlayer) {
 		GL11.glPushMatrix();
 
-		texture(new ResourceLocation("motive", "textures/gui/modes.png"));
-
-		final Tessellator tessellator = Tessellator.instance;
-		tessellator.startDrawingQuads();
-
-		tessellator.addVertexWithUV(0, 0, 0, 15f / 256f, 2f / 256f);
-		tessellator.addVertexWithUV(0, 5, 0, 15f / 256f, 7f / 256f);
-		tessellator.addVertexWithUV(6, 5, 0, 21f / 256f, 7f / 256f);
-		tessellator.addVertexWithUV(6, 0, 0, 21f / 256f, 2f / 256f);
-
 		GL11.glTranslatef(100, -14, -0.1f);
 
 		final double angle = angleToEntity(tileEntityMoverPairedTo, thePlayer);
 
-		GL11.glTranslatef(3, 2.5f, 0);
+		final float xMiddle = (float) Texture.pairedArrow.uSize / 2;
+		final float yMiddle = (float) Texture.pairedArrow.vSize / 2;
+
+		GL11.glTranslatef(xMiddle, yMiddle, 0);
 		GL11.glRotatef(-(float) angle, 0, 0, 1);
 		GL11.glScalef(2, 2, 1);
-		GL11.glTranslatef(-3, -2.5f, 0);
+		GL11.glTranslatef(-xMiddle, -yMiddle, 0);
 
-		tessellator.draw();
+		Texture.pairedArrow.draw();
 
 		GL11.glPopMatrix();
 	}
@@ -127,7 +119,7 @@ public class ModelMoverRemoteControl extends ModelMotiveBase {
 
 	@Override
 	protected void renderModel(TileEntity tileEntity, ItemStack stack, float partialTickTime) {
-		texture(Motive.resourceRemoteControlTexture);
+		// texture(Motive.resourceRemoteControlTexture);
 
 		// GL11.glDisable(GL11.GL_LIGHTING);
 

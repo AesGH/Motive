@@ -2,8 +2,8 @@ package aes.motive.gui;
 
 import java.util.Arrays;
 
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
+import aes.gui.core.GuiDialog;
 import aes.gui.widgets.ButtonVanilla;
 import aes.gui.widgets.Label;
 import aes.gui.widgets.MultiTooltip;
@@ -16,6 +16,7 @@ import aes.gui.widgets.base.Slider.ValueChangedHandler;
 import aes.gui.widgets.base.Widget;
 import aes.motive.FontUtils;
 import aes.motive.Motive;
+import aes.motive.Texture;
 import aes.motive.tileentity.MoverMode;
 import aes.motive.tileentity.TileEntityMover;
 import aes.motive.tileentity.TileEntityMoverBase;
@@ -127,7 +128,7 @@ public class GuiMover extends GuiDialog {
 	@Override
 	public void drawBackground() {
 		super.drawBackground();
-		Resources.inset.draw(this.container.left() + this.margin, this.statusAreaYStart, this.zLevel, this.xSize - 2 * this.margin, this.statusAreaYEnd
+		Texture.guiInset.draw(this.container.left() + this.margin, this.statusAreaYStart, this.zLevel, this.xSize - 2 * this.margin, this.statusAreaYEnd
 				- this.statusAreaYStart);
 	}
 
@@ -210,26 +211,22 @@ public class GuiMover extends GuiDialog {
 		this.sliderSpeed.setValue(getTileEntity().getSpeed());
 		switch (tileEntity.mode) {
 		case TowardsSignal:
-			// this.buttonMode.setText("Moving towards signals");
 			this.buttonMode.setTooltip(new Tooltip("Towards redstone signals"));
-			this.buttonMode.setImage(new ResourceLocation("motive", "textures/gui/modes.png"), 10, 7, 0, 25, 10, 7, false);
+			this.buttonMode.setImage(Texture.modeToRedstone, false);
 			break;
 		case Remote:
-			// this.buttonMode.setText("Moving towards signals");
 			this.buttonMode.setTooltip(new Tooltip("Move with " + Motive.ItemMoverRemoteControl.getStatName()));
-			this.buttonMode.setImage(new ResourceLocation("motive", "textures/gui/modes.png"), 10, 10, 21, 18, 10, 10, false);
+			this.buttonMode.setImage(Texture.modeRemote, false);
 			break;
 		case AwayFromSignal:
-			// this.buttonMode.setText("Moving away from signals");
 			this.buttonMode.setTooltip(new Tooltip("Away from redstone signals"));
-			this.buttonMode.setImage(new ResourceLocation("motive", "textures/gui/modes.png"), 10, 7, 0, 18, 10, 7, false);
+			this.buttonMode.setImage(Texture.modeFromRedstone, false);
 			break;
 		case ComputerControlled:
-			// this.buttonMode.setText("ComputerCraft peripheral");
 			this.buttonMode.setTooltip(new MultiTooltip(Arrays.asList("ComputerCraft peripheral", FontUtils.textColorGrey + " " + TileEntityMover.usageMove,
 					FontUtils.textColorGrey + " " + TileEntityMover.usageIsActive, FontUtils.textColorGrey + " " + TileEntityMover.usageIsMoving,
 					FontUtils.textColorGrey + " " + TileEntityMover.usageLock, FontUtils.textColorGrey + " " + TileEntityMover.usageUnlock)));
-			this.buttonMode.setImage(new ResourceLocation("motive", "textures/gui/modes.png"), 10, 10, 11, 18, 10, 10, false);
+			this.buttonMode.setImage(Texture.modeComputer, false);
 			break;
 		}
 		if (tileEntity.getStatus().isEmpty()) {

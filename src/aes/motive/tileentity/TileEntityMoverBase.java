@@ -45,6 +45,10 @@ public class TileEntityMoverBase extends TileEntityBase {
 		movers.remove(key);
 	}
 
+	private static boolean DEBUG_DUMP_MOVER_REGISTRY_ON_CHANGE() {
+		return false;
+	}
+
 	private static boolean DEBUG_HALT_MOVE_HALFWAY() {
 		return false;
 	}
@@ -54,12 +58,14 @@ public class TileEntityMoverBase extends TileEntityBase {
 	}
 
 	private static void dumpMovers() {
-		/*
-		 * Motive.log("current movers:"); for (final String key :
-		 * movers.keySet()) { final Map<String, TileEntityMoverBase> entities =
-		 * movers.get(key); Motive.log(key + " : " + entities.size() +
-		 * " movers"); }
-		 */}
+		if (DEBUG_DUMP_MOVER_REGISTRY_ON_CHANGE()) {
+			Motive.log("current movers:");
+			for (final String key : movers.keySet()) {
+				final Map<String, TileEntityMoverBase> entities = movers.get(key);
+				Motive.log(key + " : " + entities.size() + " movers");
+			}
+		}
+	}
 
 	protected static String getKeyForWorld(World world) {
 		if (world == null)
@@ -128,6 +134,7 @@ public class TileEntityMoverBase extends TileEntityBase {
 
 	private String uid;
 	public boolean moving = false;
+	private boolean forcingSimultaneousRenderering = false;
 	public Vector3f moved = new Vector3f();
 	private ConnectedBlocks connectedBlocks;
 	private String status = "";
@@ -246,6 +253,10 @@ public class TileEntityMoverBase extends TileEntityBase {
 		return this.connectedBlocks;
 	}
 
+	public boolean getForcingSimultaneousRenderering() {
+		return this.forcingSimultaneousRenderering;
+	}
+
 	public boolean getLocked() {
 		return getConnectedBlocks().blocks.size() > 1;
 	}
@@ -268,11 +279,11 @@ public class TileEntityMoverBase extends TileEntityBase {
 
 	public String getStatus() {
 		return this.status;
-	}
+	};
 
 	public String getStatusDetail() {
 		return this.statusDetail;
-	};
+	}
 
 	public String getUid() {
 		if (this.uid == null) {
@@ -575,6 +586,7 @@ public class TileEntityMoverBase extends TileEntityBase {
 															// nbtTagCompound.getFloat("movedY"),
 															// nbtTagCompound.getFloat("movedZ"));
 		setPowered(readVector3i(nbtTagCompound, "powered"));
+		this.forcingSimultaneousRenderering = nbtTagCompound.getBoolean("forceRender");
 		// new Vector3i(nbtTagCompound.getInteger("poweredX"),
 		// nbtTagCompound.getInteger("poweredY"),
 		// nbtTagCompound.getInteger("poweredZ")));
@@ -651,6 +663,10 @@ public class TileEntityMoverBase extends TileEntityBase {
 		updateAffectedBlocks();
 		updateAffectedWorldRenderers();
 		markConnectedBlocksForRender();
+	}
+
+	public void setForcingSimultaneousRenderering(boolean forcingSimultaneousRenderering) {
+		this.forcingSimultaneousRenderering = forcingSimultaneousRenderering;
 	}
 
 	public boolean setLocked(boolean value) {
@@ -862,17 +878,9 @@ public class TileEntityMoverBase extends TileEntityBase {
 
 		writeVector(nbtTagCompound, "moved", this.moved);
 
-		/*
-		 * nbtTagCompound.setFloat("movedX", this.moved.x);
-		 * nbtTagCompound.setFloat("movedY", this.moved.y);
-		 * nbtTagCompound.setFloat("movedZ", this.moved.z);
-		 */
 		writeVector(nbtTagCompound, "powered", getPowered());
-		/*
-		 * nbtTagCompound.setInteger("poweredX", getPowered().x);
-		 * nbtTagCompound.setInteger("poweredY", getPowered().y);
-		 * nbtTagCompound.setInteger("poweredZ", getPowered().z);
-		 */
+		nbtTagCompound.setBoolean("forceRender", this.forcingSimultaneousRenderering);
+
 		writeBlockListToNBT(nbtTagCompound, "connectedBlocks", getConnectedBlocks().blocks, false);
 	}
 

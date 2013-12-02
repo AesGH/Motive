@@ -1,39 +1,81 @@
 package aes.motive.render.model;
 
-import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
-import aes.motive.Motive;
-import aes.utils.Vector3d;
+
+import org.lwjgl.opengl.GL11;
+
+import aes.motive.Texture;
+import aes.motive.tileentity.TileEntityBreaker;
 
 public class ModelBreaker extends ModelMotiveBase {
-	private final ModelRenderer outline;
-
 	public ModelBreaker() {
-		this.outline = new ModelRenderer(this, 0, 0);
-		this.outline.addBox(-64, -64, -64, 128, 128, 128);
-		this.outline.setRotationPoint(0F, 128F, 0F);
-		this.outline.setTextureSize(512, 512);
-		this.outline.mirror = false;
 	}
 
 	@Override
 	protected void renderModel(TileEntity tileEntity, ItemStack stack, float partialTickTime) {
-		// drawBoltedFace(true);//Frame();
+		Texture.breakerFront.draw();
+		Texture.breakerBody.draw();
+		Texture.breakerEndcap.draw();
 
-		startDrawing();
-		texture(Motive.resourceBreakerTexture);
+		if (!(tileEntity instanceof TileEntityBreaker))
+			return;
 
-		setUVOffset(0, 0);
+		final TileEntityBreaker tileEntityBreaker = (TileEntityBreaker) tileEntity;
 
-		final double inset = 8D;
+		if (tileEntityBreaker.getConnectionMask().isConnectedLeft()) {
+			GL11.glPushMatrix();
 
-		addQuadWithUV(new Vector3d(inset, inset, inset), 0, 0, new Vector3d(inset, 128 - inset, inset), 0, 128, new Vector3d(128 - inset, 128 - inset, inset),
-				128, 128, new Vector3d(128 - inset, inset, inset), 128, 0);
+			GL11.glTranslated(0.5f, 0.5f, 0.5f);
+			GL11.glRotated(90, 0, 1, 0);
+			GL11.glTranslated(-0.5f, -0.5f, -0.5f);
 
-		addQuadWithUV(new Vector3d(inset, inset, inset), 0, 0, new Vector3d(128 - inset, inset, inset), 128, 0, new Vector3d(128 - inset, 128 - inset, inset),
-				128, 128, new Vector3d(inset, 128 - inset, inset), 0, 128);
+			Texture.breakerConnection.draw();
+			GL11.glPopMatrix();
+		}
 
-		draw();
+		if (tileEntityBreaker.getConnectionMask().isConnectedRight()) {
+			GL11.glPushMatrix();
+
+			GL11.glTranslated(0.5f, 0.5f, 0.5f);
+			GL11.glRotated(270, 0, 1, 0);
+			GL11.glTranslated(-0.5f, -0.5f, -0.5f);
+
+			Texture.breakerConnection.draw();
+			GL11.glPopMatrix();
+		}
+
+		if (tileEntityBreaker.getConnectionMask().isConnectedBack()) {
+			GL11.glPushMatrix();
+
+			GL11.glTranslated(0.5f, 0.5f, 0.5f);
+			GL11.glRotated(180, 0, 1, 0);
+			GL11.glTranslated(-0.5f, -0.5f, -0.5f);
+
+			Texture.breakerConnection.draw();
+			GL11.glPopMatrix();
+		}
+
+		if (tileEntityBreaker.getConnectionMask().isConnectedUp()) {
+			GL11.glPushMatrix();
+
+			GL11.glTranslated(0.5f, 0.5f, 0.5f);
+			GL11.glRotated(90, 1, 0, 0);
+			GL11.glTranslated(-0.5f, -0.5f, -0.5f);
+
+			Texture.breakerConnection.draw();
+			GL11.glPopMatrix();
+		}
+
+		if (tileEntityBreaker.getConnectionMask().isConnectedDown()) {
+			GL11.glPushMatrix();
+
+			GL11.glTranslated(0.5f, 0.5f, 0.5f);
+			GL11.glRotated(270, 1, 0, 0);
+			GL11.glTranslated(-0.5f, -0.5f, -0.5f);
+
+			Texture.breakerConnection.draw();
+			GL11.glPopMatrix();
+		}
 	}
 }

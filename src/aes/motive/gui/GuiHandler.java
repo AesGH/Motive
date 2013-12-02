@@ -6,7 +6,7 @@ import net.minecraft.world.World;
 import aes.motive.tileentity.TileEntityBreaker;
 import aes.motive.tileentity.TileEntityMover;
 
-public class GuiHandlerMover implements cpw.mods.fml.common.network.IGuiHandler {
+public class GuiHandler implements cpw.mods.fml.common.network.IGuiHandler {
 
 	@Override
 	public Object getClientGuiElement(int id, EntityPlayer player, World world, int x, int y, int z) {

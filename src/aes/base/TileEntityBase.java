@@ -5,11 +5,10 @@ import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.Packet132TileEntityData;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
-import aes.motive.Motive;
+import net.minecraftforge.common.ForgeDirection;
 import aes.utils.Vector3i;
 
 public class TileEntityBase extends TileEntity {
-
 	@Override
 	public Packet getDescriptionPacket() {
 		final NBTTagCompound nbttagcompound = new NBTTagCompound();
@@ -17,8 +16,16 @@ public class TileEntityBase extends TileEntity {
 		return new Packet132TileEntityData(this.xCoord, this.yCoord, this.zCoord, 2, nbttagcompound);
 	}
 
+	public ForgeDirection getFacing() {
+		return BlockBase.getFacing(this.worldObj, this.xCoord, this.yCoord, this.zCoord);
+	}
+
 	public Vector3i getLocation() {
 		return new Vector3i(this.xCoord, this.yCoord, this.zCoord);
+	}
+
+	public String getRenderCacheKey() {
+		return null;
 	}
 
 	public void onBlockNeighborChange() {
@@ -43,17 +50,22 @@ public class TileEntityBase extends TileEntity {
 			}
 		}
 		return true;
-	}
+	};
 
 	@Override
 	public boolean shouldRenderInPass(int pass) {
 		return pass == 0;
-	};
+	}
 
 	protected void updateBlock() {
-		if (this.worldObj == null || this.worldObj.isRemote)
+		if (this.worldObj == null)
 			return;
-		Motive.log(this.worldObj, "updateBlock " + getLocation() + " at tick " + this.worldObj.getWorldTime());
+		// Motive.log(this.worldObj, "updateBlock " + getLocation() +
+		// " at tick " + this.worldObj.getWorldTime());
+		if (this.worldObj.isRemote) {
+			this.worldObj.markBlockForRenderUpdate(this.xCoord, this.yCoord, this.zCoord);
+			return;
+		}
 		this.worldObj.markBlockForUpdate(this.xCoord, this.yCoord, this.zCoord);
 	}
 }

@@ -1,6 +1,6 @@
-package aes.motive.gui;
+package aes.gui.core;
 
-import aes.gui.core.BasicScreen;
+import aes.motive.Texture;
 
 public abstract class GuiDialog extends BasicScreen {
 	protected int xSize;
@@ -16,7 +16,7 @@ public abstract class GuiDialog extends BasicScreen {
 	@Override
 	public void drawBackground() {
 		super.drawBackground();
-		Resources.dialogBackground.draw(this.xPos, this.yPos, this.zLevel, this.xSize, this.ySize);
+		Texture.dialogBorder.draw(this.xPos, this.yPos, this.zLevel, this.xSize, this.ySize);
 		update();
 	}
 
