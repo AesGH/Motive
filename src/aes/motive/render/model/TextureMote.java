@@ -1,10 +1,11 @@
-package aes.motive;
+package aes.motive.render.model;
 
+import aes.motive.Texture;
 import aes.utils.Vector3d;
 
 public class TextureMote extends Texture {
 
-	protected TextureMote(int u, int v, int uSize, int vSize) {
+	public TextureMote(int u, int v, int uSize, int vSize) {
 		super(u, v, uSize, vSize);
 	}
 

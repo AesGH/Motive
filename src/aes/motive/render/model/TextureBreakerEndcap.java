@@ -1,8 +1,10 @@
-package aes.motive;
+package aes.motive.render.model;
+
+import aes.motive.Texture;
 
 public class TextureBreakerEndcap extends Texture {
 
-	protected TextureBreakerEndcap(int u, int v, int uSize, int vSize) {
+	public TextureBreakerEndcap(int u, int v, int uSize, int vSize) {
 		super(u, v, uSize, vSize);
 	}
 

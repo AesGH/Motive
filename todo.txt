@@ -1,0 +1,26 @@
+done:
+queue powered moves. 
+check powered moves can move
+"stop moving" with remote
+remote PAIRED direction arrow
+
+
+
+todo:
+
+speed init value gui
+
+allow move if over non-connectable block
+
+fix raytrace mouse over logic
+
+
+breaker items
+breaker settings GUI
+world gen
+entity clipping
+lighting
+breaker model
+
+
+

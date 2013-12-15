@@ -8,7 +8,7 @@
 	<property name="ccobf.version" value="1.0.0.15" />
 	
 	<property name="src.dir" value="${ant.project.name}" />
-	<property name="build.dir" value="build_${mc.version}" />
+	<property name="build.dir" value="c:\build_${mc.version}" />
 	<property name="download.dir" value="download" />
 	
 	

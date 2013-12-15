@@ -6,6 +6,14 @@ import net.minecraft.util.ResourceLocation;
 
 import org.lwjgl.opengl.GL11;
 
+import aes.motive.render.model.TextureBoltPanel;
+import aes.motive.render.model.TextureBreakerBody;
+import aes.motive.render.model.TextureBreakerConnection;
+import aes.motive.render.model.TextureBreakerEndcap;
+import aes.motive.render.model.TextureBreakerFront;
+import aes.motive.render.model.TextureDiagonalStrut;
+import aes.motive.render.model.TextureEdgeStrut;
+import aes.motive.render.model.TextureMote;
 import aes.utils.Vector3d;
 
 public class Texture {

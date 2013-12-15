@@ -1,11 +1,11 @@
-package aes.motive;
+package aes.motive.render.model;
 
-import aes.motive.render.model.ModelMotiveBase;
+import aes.motive.Texture;
 import aes.utils.Vector3d;
 
 public class TextureDiagonalStrut extends Texture {
 
-	protected TextureDiagonalStrut(int u, int v, int uSize, int vSize) {
+	public TextureDiagonalStrut(int u, int v, int uSize, int vSize) {
 		super(u, v, uSize, vSize);
 		this.vectorScale = 1D / 128D;
 	}

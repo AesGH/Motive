@@ -46,7 +46,7 @@ public class TileEntityMoverBase extends TileEntityBase {
 	}
 
 	private static boolean DEBUG_DUMP_MOVER_REGISTRY_ON_CHANGE() {
-		return false;
+		return true;
 	}
 
 	private static boolean DEBUG_HALT_MOVE_HALFWAY() {
@@ -64,6 +64,7 @@ public class TileEntityMoverBase extends TileEntityBase {
 				final Map<String, TileEntityMoverBase> entities = movers.get(key);
 				Motive.log(key + " : " + entities.size() + " movers");
 			}
+			Thread.dumpStack();			
 		}
 	}
 
@@ -230,7 +231,7 @@ public class TileEntityMoverBase extends TileEntityBase {
 	}
 
 	private float distanceFromSpeed() {
-		return 0.01f + getSpeed() * 0.3f;
+		return 0.01f + getSpeed() * 0.8f;
 	}
 
 	public boolean getActive() {
@@ -353,6 +354,8 @@ public class TileEntityMoverBase extends TileEntityBase {
 		return false;
 	}
 
+	public final static Set<WorldRenderer> worldRenderersToUpdate = new HashSet<WorldRenderer>();
+	
 	@SuppressWarnings("unchecked")
 	protected void markConnectedBlocksForRender() {
 		if (this.worldObj == null || !this.worldObj.isRemote)
@@ -366,16 +369,18 @@ public class TileEntityMoverBase extends TileEntityBase {
 				Obfuscation.getSrgName("worldRenderersToUpdate"));
 		for (final WorldRenderer worldrenderer : getAffectedWorldRenderers()) {
 			if (!worldRenderersToUpdate.contains(worldrenderer)) {
+				TileEntityMover.worldRenderersToUpdate.add(worldrenderer);
+				
 				worldRenderersToUpdate.add(worldrenderer);
 				worldrenderer.markDirty();
 			}
 		}
 
-		/*
-		 * for (final Vector3i location : this.connectedBlocks.blocks) {
-		 * renderGlobal.markBlockForRenderUpdate(location.x, location.y,
-		 * location.z); }
-		 */}
+		
+		  for (final Vector3i location : this.connectedBlocks.blocks) {
+		  renderGlobal.markBlockForRenderUpdate(location.x, location.y,
+		  location.z); }
+		 }
 
 	protected void moveConnectedEntities() {
 		for (final Object entity : this.worldObj.loadedEntityList) {
@@ -416,7 +421,7 @@ public class TileEntityMoverBase extends TileEntityBase {
 		this.moved = new Vector3f();
 		this.movedPreviousTick = this.moved;
 
-		Motive.log(this.worldObj, "moving " + getLockedCount() + " blocks " + getPowered().getDirection() + " from " + getLocation());
+		//Motive.log(this.worldObj, "moving " + getLockedCount() + " blocks " + getPowered().getDirection() + " from " + getLocation());
 
 		updateAffectedBlocks();
 
@@ -483,8 +488,18 @@ public class TileEntityMoverBase extends TileEntityBase {
 
 		// remove from client if moved out of range
 		if (!anyBlocksLoaded) {
-			Motive.log(this.worldObj, "Moved out of range, unregistering mover");
+			Motive.log(this.worldObj, "Moved out of range (all " + blockInfos + " blocks). deregistering mover");
+			
+			// remove cleared tileEntities
+			for (final BlockInfo block : blockInfos) {
+				if(block.entity != null)
+				{
+					//this.worldObj.removeBlockTileEntity(block.entity.xCoord, block.entity.yCoord, block.entity.zCoord);
+					block.entity.invalidate();
+				}
+			}			
 			removeMover(this);
+			return;
 		}
 
 		/*
@@ -773,7 +788,7 @@ public class TileEntityMoverBase extends TileEntityBase {
 			getAffectedWorldRenderers().add(WorldUtils.getWorldRenderer(worldRenderers, renderChunksWide, renderChunksTall, renderChunksDeep, location));
 		}
 
-		Motive.log("found " + getAffectedWorldRenderers().size() + " affected world renderers");
+//		Motive.log("found " + getAffectedWorldRenderers().size() + " affected world renderers");
 	}
 
 	@Override
@@ -784,6 +799,43 @@ public class TileEntityMoverBase extends TileEntityBase {
 			this.registerMover = false;
 			setMover(this);
 		}
+
+		TileEntityMoverBase moverMoving;
+		moverMoving = getMover(worldObj, getUid());
+		if (moverMoving != null && moverMoving != this) {
+			Motive.log(worldObj, "found a different mover registered as this uid");
+			
+			Motive.log(worldObj, "location of other: " + moverMoving.getLocation() + ", location of me: " + getLocation());
+			Motive.log(worldObj, "uid of other: " + moverMoving.getUid() + ", location of me: " + getUid());
+			Motive.log(worldObj, "duplicate, invalidating self");
+			invalidate();
+			return;
+		}
+
+		
+		if(moverMoving == null)
+		{
+			Motive.log(worldObj, "I'm not registered. Invalidating.");
+			invalidate();
+			return;
+		}
+		
+		
+		moverMoving = RenderHook.INSTANCE.getMoverMoving(this.worldObj, this.xCoord, this.yCoord, this.zCoord);
+		if (moverMoving != null && moverMoving != this) {
+			Motive.log(worldObj, "found a different mover moving this block");
+			
+			Motive.log(worldObj, "location of other: " + moverMoving.getLocation() + ", location of me: " + getLocation());
+			Motive.log(worldObj, "uid of other: " + moverMoving.getUid() + ", location of me: " + getUid());
+			if(moverMoving.getUid().equals(this.getUid()))
+			{
+				Motive.log(worldObj, "duplicate, invalidating self");
+				invalidate();
+				return;
+			}
+		}
+		
+		
 		if (this.moving) {
 			if (this.worldObj.isRemote) {
 				this.prevSquishFactor = this.squishFactor;
@@ -830,10 +882,16 @@ public class TileEntityMoverBase extends TileEntityBase {
 		}
 
 		if (this.moving) {
-			markConnectedBlocksForRender();
-
-			this.worldObj.spawnParticle("reddust", this.xCoord + this.moved.x + 0.5F, this.yCoord + this.moved.y + 0.5F, this.zCoord + this.moved.z + 0.5F,
+			if(getMover(worldObj, this.getUid()) != null)
+			{
+				markConnectedBlocksForRender();
+				this.worldObj.spawnParticle("reddust", this.xCoord + this.moved.x + 0.5F, this.yCoord + this.moved.y + 0.5F, this.zCoord + this.moved.z + 0.5F,
 					-0.4, 0, 1);
+			}
+			else
+			{
+				removeTileEntity();
+			}
 		}
 	}
 
@@ -894,5 +952,16 @@ public class TileEntityMoverBase extends TileEntityBase {
 		nbtTagCompound.setInteger(name + "X", vector.x);
 		nbtTagCompound.setInteger(name + "Y", vector.y);
 		nbtTagCompound.setInteger(name + "Z", vector.z);
+	}
+
+	public boolean areAnyConnectedBlocksLoaded() {
+		for (final Vector3i c : affectedBlocks) {
+			final Chunk chunkFrom = this.worldObj.getChunkFromBlockCoords(c.x, c.z);
+			if (!chunkFrom.isChunkLoaded) {
+				continue;
+			}
+			return true;
+		}
+		return false;
 	}
 }

@@ -13,19 +13,25 @@ import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.server.management.PlayerInstance;
+import net.minecraft.server.management.PlayerManager;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
+import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
 import net.minecraftforge.common.ForgeDirection;
 
 import org.lwjgl.opengl.GL11;
 
+import aes.motive.Motive;
 import aes.motive.tileentity.TileEntityMover;
 import aes.motive.tileentity.TileEntityMoverBase;
 import aes.utils.Obfuscation;
 import aes.utils.PrivateFieldAccess;
+import aes.utils.Vector2i;
 import aes.utils.Vector3f;
 import aes.utils.Vector3i;
 
@@ -142,8 +148,11 @@ public class RenderHook {
 				final Vector3i coord = new Vector3i(x, y, z);
 				for (final TileEntityMoverBase mover : TileEntityMoverBase.getMovers(world).values()) {
 					if (world.getBlockTileEntity(mover.xCoord, mover.yCoord, mover.zCoord) != mover) {
-						this.moversToRemove.add(mover);
-						continue;
+						if(!mover.areAnyConnectedBlocksLoaded())
+						{
+							this.moversToRemove.add(mover);
+							continue;
+						}
 					}
 					if (mover.getConnectedBlocks().blocks.contains(coord))
 						return mover;
@@ -155,6 +164,7 @@ public class RenderHook {
 		} finally {
 
 			for (final TileEntityMoverBase tileEntityMoverBase : this.moversToRemove) {
+				Motive.log(world, "removing because tileEntity no longer at location");
 				TileEntityMoverBase.removeMover(tileEntityMoverBase);
 			}
 			this.moversToRemove.clear();
@@ -589,14 +599,89 @@ public class RenderHook {
 	}
 
 	public boolean worldRendererContainsMovingBlocks(WorldRenderer worldrenderer) {
-		// worldrenderer.worldObj.theProfiler.startSection("checkContainsMoving");
+//		return false;
+		return TileEntityMover.worldRenderersToUpdate.remove(worldrenderer);
+		
+/*		// worldrenderer.worldObj.theProfiler.startSection("checkContainsMoving");
 		for (final TileEntityMoverBase tileEntityMoverBase : TileEntityMoverBase.getMovers(worldrenderer.worldObj).values()) {
-			if (tileEntityMoverBase.moving && tileEntityMoverBase.getForcingSimultaneousRenderering()
+			
+			if (tileEntityMoverBase.moving 
+					//&& tileEntityMoverBase.getForcingSimultaneousRenderering()
 					&& tileEntityMoverBase.getAffectedWorldRenderers().contains(worldrenderer))
 				// worldrenderer.worldObj.theProfiler.endSection();
 				return true;
 		}
 		// worldrenderer.worldObj.theProfiler.endSection();
 		return false;
+*/	}
+
+	public void updateEntity(Entity par1Entity) {
+        if(par1Entity instanceof EntityPlayerMP)
+        {
+        	EntityPlayerMP player = (EntityPlayerMP)par1Entity;
+            
+            
+        	/*            for(EntityPlayerMP par1EntityPlayerMP : (List<EntityPlayerMP>)this.players)
+            {
+    */            
+            // monkey
+
+
+            
+            PlayerManager playerManager = player.getServerForPlayer().getPlayerManager();
+//            playerManager.filterChunkLoadQueue(this);
+            for(TileEntityMoverBase mover : TileEntityMoverBase.getMovers(player.worldObj).values())
+            {
+            	boolean containsAnyMoving = false;
+            	for(Vector2i chunkLocation : mover.affectedChunks)
+            	{
+            		if(playerManager.isPlayerWatchingChunk(player, chunkLocation.x, chunkLocation.y) || player.loadedChunks.contains(new ChunkCoordIntPair(chunkLocation.x,  chunkLocation.y)))
+            		{
+            			if(chunkLocation.distanceTo(new Vector2i((int)player.posX >> 4, (int)player.posZ >> 4)) < 18)
+            			{
+            			containsAnyMoving = true;
+            			break;
+            			}
+            		}
+            	}
+            	
+            	if(containsAnyMoving)
+            	{
+            		Motive.log(player.worldObj, "contains a mover with " + mover.affectedChunks.size() + " attatched chunks");
+            		
+                	for(Vector2i chunkLocation : mover.affectedChunks)
+                	{
+                		if(!(playerManager.isPlayerWatchingChunk(player, chunkLocation.x, chunkLocation.y) || player.loadedChunks.contains(new ChunkCoordIntPair(chunkLocation.x,  chunkLocation.y))))
+                		{
+                			playerManager.getOrCreateChunkWatcher(chunkLocation.x, chunkLocation.y, true).addPlayer(player);
+//                			playerManager.addPlayer(this);
+//                			this.loadedChunks.add(new ChunkCoordIntPair(chunkLocation.x,  chunkLocation.y));
+                    		Motive.log(player.worldObj, "adding player as watching chunk: " + chunkLocation);
+                		}
+                	}
+            	}
+            	else
+            	{
+            		Motive.log(player.worldObj, "doesn't contain a mover with " + mover.affectedChunks.size() + " attatched chunks");
+            		
+                	for(Vector2i chunkLocation : mover.affectedChunks)
+                	{
+                		if((playerManager.isPlayerWatchingChunk(player, chunkLocation.x, chunkLocation.y) || player.loadedChunks.contains(new ChunkCoordIntPair(chunkLocation.x,  chunkLocation.y))))
+                		{
+                			PlayerInstance chunkWatcher = playerManager.getOrCreateChunkWatcher(chunkLocation.x, chunkLocation.y, false);
+                			if(chunkWatcher != null)
+                			{
+							chunkWatcher.removePlayer(player);
+//                			playerManager.addPlayer(this);
+//                			this.loadedChunks.add(new ChunkCoordIntPair(chunkLocation.x,  chunkLocation.y));
+                    		Motive.log(player.worldObj, "removed player as watching chunk: " + chunkLocation);
+                			}
+                		}
+                	}
+            	}
+            	
+            }
+        }
+		
 	}
 }

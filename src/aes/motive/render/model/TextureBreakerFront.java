@@ -1,10 +1,11 @@
-package aes.motive;
+package aes.motive.render.model;
 
+import aes.motive.Texture;
 import aes.utils.Vector3d;
 
 public class TextureBreakerFront extends Texture {
 
-	protected TextureBreakerFront(int u, int v, int uSize, int vSize) {
+	public TextureBreakerFront(int u, int v, int uSize, int vSize) {
 		super(u, v, uSize, vSize);
 	}
 

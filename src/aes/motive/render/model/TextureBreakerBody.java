@@ -1,8 +1,10 @@
-package aes.motive;
+package aes.motive.render.model;
+
+import aes.motive.Texture;
 
 public class TextureBreakerBody extends Texture {
 
-	protected TextureBreakerBody(int u, int v, int uSize, int vSize) {
+	public TextureBreakerBody(int u, int v, int uSize, int vSize) {
 		super(u, v, uSize, vSize);
 	}
 

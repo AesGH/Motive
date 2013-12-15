@@ -57,4 +57,8 @@ public class Vector2i {
 	public String toString() {
 		return this.x + "," + this.y;
 	}
+
+	public int distanceTo(Vector2i other) {
+		return (int)Math.sqrt((this.x - other.x) * (this.x - other.x) + (this.y - other.y) * (this.y - other.y));
+	}
 }

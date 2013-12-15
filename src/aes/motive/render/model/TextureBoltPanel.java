@@ -1,6 +1,6 @@
-package aes.motive;
+package aes.motive.render.model;
 
-import aes.motive.render.model.ModelMotiveBase;
+import aes.motive.Texture;
 import aes.utils.Vector3d;
 
 public class TextureBoltPanel extends Texture {
@@ -8,7 +8,7 @@ public class TextureBoltPanel extends Texture {
 	private double frontZ;
 	private double backZ;
 
-	protected TextureBoltPanel(int u, int v, int uSize, int vSize) {
+	public TextureBoltPanel(int u, int v, int uSize, int vSize) {
 		super(u, v, uSize, vSize);
 		this.nutHeight = ModelMotiveBase.getNutHeight();
 		this.vectorOffsetX = this.nutHeight;

@@ -1,4 +1,6 @@
-package aes.motive;
+package aes.motive.render.model;
+
+import aes.motive.Texture;
 
 public class TextureBreakerConnection extends Texture {
 
@@ -8,7 +10,7 @@ public class TextureBreakerConnection extends Texture {
 		return 2;
 	}
 
-	protected TextureBreakerConnection(int u, int v, int uSize, int vSize) {
+	public TextureBreakerConnection(int u, int v, int uSize, int vSize) {
 		super(u, v, uSize, vSize);
 	}
 
@@ -23,16 +25,9 @@ public class TextureBreakerConnection extends Texture {
 		final double middleEnd = 0.5f + strutHeight / 2;
 		final double end = 0f;
 
-		// left side
 		addRectangleYZ(middleEnd, middleEnd, middleStart, 0, 0, middleStart, end, this.uSize, this.vSize, true);
-
-		// right side
 		addRectangleYZ(middleStart, middleEnd, middleStart, 0, 0, middleStart, end, this.uSize, this.vSize, false);
-
-		// bottom side
 		addRectangleXZ(middleEnd, middleStart, middleStart, 0, 0, middleStart, end, this.uSize, this.vSize, true);
-
-		// top side
 		addRectangleXZ(middleEnd, middleEnd, middleStart, 0, 0, middleStart, end, this.uSize, this.vSize, false);
 	}
 

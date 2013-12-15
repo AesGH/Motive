@@ -19,7 +19,7 @@ import net.minecraftforge.common.ForgeDirection;
 import aes.base.BlockBase;
 import aes.base.TileEntityBase;
 import aes.motive.Motive;
-import aes.motive.TextureBreakerConnection;
+import aes.motive.render.model.TextureBreakerConnection;
 import aes.utils.Vector3i;
 import aes.utils.WorldUtils;
 import cpw.mods.fml.common.FMLCommonHandler;
